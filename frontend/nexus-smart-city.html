@@ -1,0 +1,1740 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEXUS | Smart City Decision Intelligence Platform</title>
+<meta name="description" content="NEXUS is an AI-powered smart city management platform for real-time traffic, waste, and energy decision-making.">
+<meta name="keywords" content="smart city, traffic management, waste management, energy management, urban intelligence, IoT dashboard">
+<meta name="author" content="NEXUS City Intelligence">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#04070f">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NEXUS | Smart City Decision Intelligence Platform">
+<meta property="og:description" content="Real-time traffic, waste, and energy intelligence for modern city management.">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"NEXUS Smart City Platform","applicationCategory":"BusinessApplication","description":"AI-powered smart city decision intelligence platform","operatingSystem":"Web Browser"}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!-- Chart.js for analytics -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<!-- Socket.io client -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.4/socket.io.min.js"></script>
+
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#04070f;--bg2:#080d1a;--panel:#0b1120;--border:#141e35;--border2:#1e2d4a;
+  --c-cyan:#00e5ff;--c-green:#39ff6a;--c-amber:#ffab00;--c-red:#ff3d71;--c-violet:#9d6bff;
+  --text:#b8ccee;--text-dim:#4a6080;--text-hi:#eef4ff;
+  --glow-c:rgba(0,229,255,0.12);--glow-g:rgba(57,255,106,0.12);--glow-a:rgba(255,171,0,0.12);
+  --r:6px;
+  --font-d:'Orbitron',monospace;--font-b:'DM Sans',sans-serif;--font-m:'Space Mono',monospace;
+}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;cursor:none}
+
+/* ── CURSOR ── */
+#cursor{position:fixed;width:10px;height:10px;background:var(--c-cyan);border-radius:50%;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);mix-blend-mode:screen;transition:width .15s,height .15s}
+#cursor-ring{position:fixed;width:32px;height:32px;border:1px solid rgba(0,229,255,0.35);border-radius:50%;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);transition:all .12s ease}
+
+/* ── PAGES ── */
+.page{display:none;min-height:100vh}
+.page.active{display:block}
+
+/* ── BG EFFECTS ── */
+#starCanvas{position:fixed;inset:0;z-index:0;pointer-events:none}
+.hex-grid{position:fixed;inset:0;z-index:0;background-image:linear-gradient(rgba(0,229,255,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(0,229,255,0.02) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;animation:gridDrift 20s linear infinite}
+@keyframes gridDrift{100%{background-position:50px 50px}}
+.orb{position:fixed;border-radius:50%;filter:blur(80px);pointer-events:none;z-index:0}
+.orb-1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,229,255,0.07),transparent 70%);top:-100px;left:-100px;animation:o1 12s ease-in-out infinite alternate}
+.orb-2{width:400px;height:400px;background:radial-gradient(circle,rgba(57,255,106,0.05),transparent 70%);bottom:0;right:-50px;animation:o2 15s ease-in-out infinite alternate}
+@keyframes o1{to{transform:translate(80px,60px)}}
+@keyframes o2{to{transform:translate(-60px,-40px)}}
+
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:18px 60px;background:rgba(4,7,15,0.75);backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,229,255,0.07)}
+.nav-logo{display:flex;align-items:center;gap:12px;text-decoration:none}
+.nav-logo-hex{width:32px;height:32px;display:flex;align-items:center;justify-content:center;position:relative}
+.nav-logo-hex svg{position:absolute;inset:0;animation:hexSpin 10s linear infinite}
+@keyframes hexSpin{to{transform:rotate(360deg)}}
+.nav-logo-inner{width:12px;height:12px;background:var(--c-cyan);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);animation:innerPulse 2s ease-in-out infinite;position:relative;z-index:1}
+@keyframes innerPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(.85)}}
+.nav-logo-text{font-family:var(--font-d);font-size:17px;font-weight:900;letter-spacing:.25em;color:var(--text-hi)}
+.nav-links{display:flex;gap:36px;list-style:none}
+.nav-links a{font-family:var(--font-m);font-size:10px;letter-spacing:.15em;color:var(--text-dim);text-decoration:none;transition:color .2s;position:relative}
+.nav-links a::after{content:'';position:absolute;bottom:-3px;left:0;right:0;height:1px;background:var(--c-cyan);transform:scaleX(0);transition:transform .3s}
+.nav-links a:hover{color:var(--c-cyan)}
+.nav-links a:hover::after{transform:scaleX(1)}
+.nav-btns{display:flex;gap:10px}
+
+/* ── BUTTONS ── */
+.btn{font-family:var(--font-m);font-size:11px;letter-spacing:.1em;padding:9px 20px;border-radius:var(--r);border:none;cursor:none;transition:all .25s;text-decoration:none;display:inline-flex;align-items:center;gap:7px;white-space:nowrap}
+.btn-ghost{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-ghost:hover{color:var(--c-cyan);border-color:var(--c-cyan);background:rgba(0,229,255,0.05)}
+.btn-primary{background:linear-gradient(135deg,var(--c-cyan),rgba(0,180,220,.8));color:#000;font-weight:700;box-shadow:0 0 20px rgba(0,229,255,.25)}
+.btn-primary:hover{box-shadow:0 0 40px rgba(0,229,255,.45);transform:translateY(-1px)}
+.btn-green{background:linear-gradient(135deg,var(--c-green),rgba(0,200,60,.8));color:#000;font-weight:700;box-shadow:0 0 20px rgba(57,255,106,.25)}
+.btn-green:hover{box-shadow:0 0 40px rgba(57,255,106,.45);transform:translateY(-1px)}
+.btn-amber{background:linear-gradient(135deg,var(--c-amber),rgba(220,140,0,.8));color:#000;font-weight:700;box-shadow:0 0 20px rgba(255,171,0,.25)}
+.btn-amber:hover{box-shadow:0 0 40px rgba(255,171,0,.45);transform:translateY(-1px)}
+
+/* ── HERO ── */
+.hero{position:relative;z-index:10;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 40px 60px}
+.hero-tag{font-family:var(--font-m);font-size:10px;letter-spacing:.3em;color:var(--c-cyan);border:1px solid rgba(0,229,255,.28);padding:6px 18px;border-radius:50px;margin-bottom:38px;display:inline-flex;align-items:center;gap:8px;animation:fadeIn .8s ease forwards;opacity:0}
+.hero-tag-dot{width:6px;height:6px;border-radius:50%;background:var(--c-cyan);animation:pulse 1.5s ease-in-out infinite}
+@keyframes fadeIn{to{opacity:1}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+.hero-title{font-family:var(--font-d);font-size:clamp(48px,9vw,108px);font-weight:900;line-height:.95;color:var(--text-hi);margin-bottom:28px;animation:titleUp 1s ease .2s forwards;opacity:0}
+@keyframes titleUp{to{opacity:1}}
+.accent{background:linear-gradient(90deg,var(--c-cyan) 0%,var(--c-green) 50%,var(--c-cyan) 100%);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;animation:gradShift 4s linear infinite}
+@keyframes gradShift{to{background-position:200% center}}
+.hero-sub{font-size:17px;color:var(--text);max-width:540px;line-height:1.7;margin:0 auto 48px;animation:fadeUp .8s ease .5s forwards;opacity:0}
+@keyframes fadeUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.hero-ctas{display:flex;gap:14px;justify-content:center;margin-bottom:70px;animation:fadeUp .8s ease .7s forwards;opacity:0}
+.btn-hero{padding:13px 32px;font-size:12px}
+
+/* ── ORBIT VIZ ── */
+.city-ring-wrap{position:relative;width:440px;height:440px;margin:0 auto;animation:fadeUp 1s ease .9s forwards;opacity:0}
+.ring{position:absolute;border-radius:50%;border:1px solid;top:50%;left:50%}
+.ring-1{width:420px;height:420px;transform:translate(-50%,-50%);border-color:rgba(0,229,255,.06)}
+.ring-2{width:320px;height:320px;transform:translate(-50%,-50%);border-color:rgba(0,229,255,.1);animation:spin1 28s linear infinite}
+.ring-3{width:220px;height:220px;transform:translate(-50%,-50%);border-color:rgba(57,255,106,.13);animation:spin2 18s linear infinite reverse}
+.ring-4{width:130px;height:130px;transform:translate(-50%,-50%);border-color:rgba(255,171,0,.18);animation:spin1 11s linear infinite}
+@keyframes spin1{to{transform:translate(-50%,-50%) rotate(360deg)}}
+@keyframes spin2{to{transform:translate(-50%,-50%) rotate(-360deg)}}
+.city-core{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:110px;height:110px;background:radial-gradient(circle,rgba(0,229,255,.09),transparent 70%);border:1px solid rgba(0,229,255,.18);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column}
+.city-core-score{font-family:var(--font-d);font-size:28px;font-weight:900;color:var(--c-cyan)}
+.city-core-label{font-family:var(--font-m);font-size:8px;color:var(--text-dim);letter-spacing:.1em}
+.stat-node{position:absolute;background:var(--panel);border:1px solid var(--border2);border-radius:var(--r);padding:9px 14px;text-align:center;white-space:nowrap;backdrop-filter:blur(10px);animation:nodeFloat 3s ease-in-out infinite alternate}
+.stat-node:nth-child(2){animation-delay:-1s}
+.stat-node:nth-child(3){animation-delay:-2s}
+@keyframes nodeFloat{from{transform:translateY(0)}to{transform:translateY(-7px)}}
+.stat-node-val{font-family:var(--font-d);font-size:17px;font-weight:700}
+.stat-node-lbl{font-family:var(--font-m);font-size:8px;color:var(--text-dim);letter-spacing:.1em}
+.node-t{top:8%;left:-12%;border-top:2px solid var(--c-cyan)}.node-t .stat-node-val{color:var(--c-cyan)}
+.node-w{bottom:8%;left:-6%;border-top:2px solid var(--c-green)}.node-w .stat-node-val{color:var(--c-green)}
+.node-e{top:8%;right:-12%;border-top:2px solid var(--c-amber)}.node-e .stat-node-val{color:var(--c-amber)}
+
+/* ── FEATURES ── */
+.features{position:relative;z-index:10;padding:110px 60px}
+.section-tag{font-family:var(--font-m);font-size:10px;letter-spacing:.3em;color:var(--text-dim);text-align:center;margin-bottom:14px}
+.section-title{font-family:var(--font-d);font-size:clamp(26px,4vw,46px);font-weight:900;text-align:center;color:var(--text-hi);margin-bottom:60px}
+.feature-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;max-width:1060px;margin:0 auto}
+.feature-card{background:var(--panel);border:1px solid var(--border);border-radius:11px;padding:30px;position:relative;overflow:hidden;transition:border-color .3s,transform .3s,box-shadow .3s}
+.feature-card:hover{transform:translateY(-5px)}
+.feature-card.f-t:hover{border-color:var(--c-cyan);box-shadow:0 16px 40px var(--glow-c)}
+.feature-card.f-w:hover{border-color:var(--c-green);box-shadow:0 16px 40px var(--glow-g)}
+.feature-card.f-e:hover{border-color:var(--c-amber);box-shadow:0 16px 40px var(--glow-a)}
+.feature-accent{height:2px;width:36px;border-radius:2px;margin-bottom:22px}
+.feature-icon{font-size:30px;margin-bottom:16px;display:block}
+.feature-title{font-family:var(--font-d);font-size:13px;font-weight:700;color:var(--text-hi);margin-bottom:10px;letter-spacing:.05em}
+.feature-desc{font-size:13px;color:var(--text);line-height:1.7}
+
+/* ── CTA + FOOTER ── */
+.cta-section{position:relative;z-index:10;text-align:center;padding:90px 40px;border-top:1px solid var(--border)}
+.cta-section h2{font-family:var(--font-d);font-size:clamp(26px,4vw,48px);font-weight:900;color:var(--text-hi);margin-bottom:18px}
+.cta-section p{font-size:15px;color:var(--text);margin-bottom:36px}
+footer{position:relative;z-index:10;text-align:center;padding:28px;border-top:1px solid var(--border);font-family:var(--font-m);font-size:10px;color:var(--text-dim);letter-spacing:.1em}
+
+/* ── LOGIN / REGISTER ── */
+#page-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:40px 20px;position:relative;overflow:hidden}
+.auth-card{position:relative;z-index:10;background:var(--panel);border:1px solid var(--border2);border-radius:14px;padding:44px 48px;width:100%;max-width:450px;box-shadow:0 40px 100px rgba(0,0,0,.6),0 0 0 1px rgba(0,229,255,.05);animation:cardIn .45s ease forwards}
+@keyframes cardIn{from{opacity:0;transform:scale(.95) translateY(18px)}to{opacity:1;transform:none}}
+.auth-logo{text-align:center;margin-bottom:32px}
+.auth-logo-title{font-family:var(--font-d);font-size:20px;font-weight:900;letter-spacing:.2em;color:var(--text-hi);margin-top:10px}
+.auth-logo-sub{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.2em;margin-top:4px}
+
+/* Tab switcher — 3 tabs */
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;background:rgba(255,255,255,.03);padding:5px;border-radius:var(--r);margin-bottom:28px;border:1px solid var(--border)}
+.auth-tab{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;padding:9px 6px;text-align:center;border-radius:4px;cursor:none;transition:all .2s;color:var(--text-dim);border:1px solid transparent;display:flex;align-items:center;justify-content:center;gap:5px}
+.auth-tab.active{background:rgba(0,229,255,.1);color:var(--c-cyan);border-color:rgba(0,229,255,.22)}
+.auth-tab:not(.active):hover{background:rgba(255,255,255,.04);color:var(--text)}
+
+.form-group{margin-bottom:18px}
+.form-label{font-family:var(--font-m);font-size:10px;letter-spacing:.14em;color:var(--text-dim);display:block;margin-bottom:7px}
+.form-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border2);border-radius:var(--r);padding:11px 14px;color:var(--text-hi);font-family:var(--font-b);font-size:13px;outline:none;transition:border-color .2s,box-shadow .2s}
+.form-input:focus{border-color:var(--c-cyan);box-shadow:0 0 0 3px rgba(0,229,255,.07)}
+.form-input::placeholder{color:var(--text-dim)}
+.form-hint{font-family:var(--font-m);font-size:10px;color:var(--text-dim);margin-top:5px}
+.form-error{font-family:var(--font-m);font-size:11px;color:var(--c-red);padding:9px 13px;background:rgba(255,61,113,.08);border:1px solid rgba(255,61,113,.2);border-radius:var(--r);margin-bottom:14px;display:none}
+.form-error.show{display:block}
+.form-success{font-family:var(--font-m);font-size:11px;color:var(--c-green);padding:9px 13px;background:rgba(57,255,106,.08);border:1px solid rgba(57,255,106,.2);border-radius:var(--r);margin-bottom:14px;display:none}
+.form-success.show{display:block}
+.btn-full{width:100%;justify-content:center;padding:13px;font-size:12px}
+.auth-back{display:block;text-align:center;margin-top:18px;font-family:var(--font-m);font-size:11px;color:var(--text-dim);cursor:none;transition:color .2s;text-decoration:none}
+.auth-back:hover{color:var(--c-cyan)}
+
+/* ── DASH LAYOUT ── */
+.dash-layout{display:flex;min-height:100vh}
+.sidebar{width:70px;background:var(--panel);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:18px 0;position:fixed;top:0;left:0;bottom:0;z-index:50;transition:width .28s;overflow:hidden}
+.sidebar:hover{width:195px}
+.sb-logo{width:36px;height:36px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center;margin-bottom:28px;flex-shrink:0}
+.sb-item{width:100%;display:flex;align-items:center;gap:13px;padding:12px 17px;cursor:none;transition:background .2s,color .2s;color:var(--text-dim);border-left:2px solid transparent;overflow:hidden;white-space:nowrap}
+.sb-item:hover,.sb-item.active{color:var(--text-hi);background:rgba(255,255,255,.04)}
+.sb-item.active{border-left-color:var(--c-cyan)}
+.sb-icon{font-size:17px;flex-shrink:0}
+.sb-label{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;opacity:0;transition:opacity .2s}
+.sidebar:hover .sb-label{opacity:1}
+.sb-bottom{margin-top:auto;width:100%}
+.sb-user{width:100%;display:flex;align-items:center;gap:13px;padding:12px 17px;overflow:hidden;white-space:nowrap;border-top:1px solid var(--border);cursor:none}
+.sb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--c-cyan),var(--c-violet));display:flex;align-items:center;justify-content:center;font-family:var(--font-d);font-size:11px;font-weight:700;color:#000;flex-shrink:0}
+.sb-user-info{opacity:0;transition:opacity .2s}
+.sidebar:hover .sb-user-info{opacity:1}
+.sb-user-name{font-size:12px;font-weight:600;color:var(--text-hi)}
+.sb-user-role{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.1em}
+
+.dash-main{flex:1;margin-left:70px;display:flex;flex-direction:column}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:rgba(8,13,26,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:40}
+.topbar-title{font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--text-hi)}
+.topbar-sub{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.1em;margin-top:2px}
+.topbar-right{display:flex;align-items:center;gap:18px}
+.live-badge{display:flex;align-items:center;gap:7px;font-family:var(--font-m);font-size:10px;color:var(--c-green);background:rgba(57,255,106,.07);border:1px solid rgba(57,255,106,.18);padding:5px 13px;border-radius:50px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--c-green);animation:pulse 1.5s ease-in-out infinite}
+.topbar-clock{font-family:var(--font-m);font-size:11px;color:var(--text-dim)}
+.topbar-logout{font-family:var(--font-m);font-size:10px;color:var(--text-dim);background:none;border:1px solid var(--border2);border-radius:var(--r);padding:6px 14px;cursor:none;transition:all .2s}
+.topbar-logout:hover{color:var(--c-red);border-color:rgba(255,61,113,.3)}
+
+.dash-content{padding:24px 28px;flex:1}
+
+/* ── ALERTS ── */
+.alert-bar{display:flex;align-items:center;gap:12px;background:linear-gradient(90deg,rgba(255,61,113,.07),rgba(255,61,113,.03));border:1px solid rgba(255,61,113,.22);border-radius:var(--r);padding:10px 16px;margin-bottom:20px;animation:slideD .4s ease}
+@keyframes slideD{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.alert-tag{font-family:var(--font-m);font-size:9px;letter-spacing:.14em;color:var(--c-red);border:1px solid rgba(255,61,113,.38);padding:2px 7px;flex-shrink:0}
+.alert-msg{font-size:12px;color:#ffb3c6;flex:1}
+.alert-x{background:none;border:none;color:var(--text-dim);font-size:14px;cursor:none;transition:color .2s}
+.alert-x:hover{color:var(--text-hi)}
+
+/* ── SCORE + KPIs ── */
+.score-row{display:grid;grid-template-columns:240px 1fr;gap:16px;margin-bottom:16px}
+.score-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.score-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--c-cyan),var(--c-green),var(--c-amber))}
+.score-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.2em;color:var(--text-dim);margin-bottom:8px}
+.score-num{font-family:var(--font-d);font-size:64px;font-weight:900;background:linear-gradient(135deg,var(--c-cyan),var(--c-green));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+.score-unit{font-family:var(--font-m);font-size:10px;color:var(--text-dim);margin-top:5px}
+.score-delta{font-size:11px;color:var(--c-green);margin-top:3px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px;transition:transform .2s,box-shadow .2s,border-color .2s}
+.kpi:hover{transform:translateY(-2px)}
+.kpi.t{border-top:2px solid var(--c-cyan)}.kpi.t:hover{border-color:var(--c-cyan);box-shadow:0 8px 28px var(--glow-c)}
+.kpi.w{border-top:2px solid var(--c-green)}.kpi.w:hover{border-color:var(--c-green);box-shadow:0 8px 28px var(--glow-g)}
+.kpi.e{border-top:2px solid var(--c-amber)}.kpi.e:hover{border-color:var(--c-amber);box-shadow:0 8px 28px var(--glow-a)}
+.kpi.a{border-top:2px solid var(--c-red)}
+.kpi-lbl{font-family:var(--font-m);font-size:9px;letter-spacing:.14em;color:var(--text-dim);margin-bottom:7px}
+.kpi-val{font-family:var(--font-d);font-size:26px;font-weight:700;color:var(--text-hi);line-height:1}
+.kpi-u{font-size:11px;color:var(--text-dim);font-weight:400;margin-left:2px;font-family:var(--font-b)}
+.kpi-trend{font-family:var(--font-m);font-size:10px;margin-top:5px}
+.up{color:var(--c-green)}.dn{color:var(--c-red)}.nt{color:var(--text-dim)}
+.kpi-bar{height:3px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden}
+.kpi-fill{height:100%;border-radius:2px;animation:barFill 1.4s ease-out forwards}
+@keyframes barFill{from{width:0}}
+.t .kpi-fill{background:var(--c-cyan)}.w .kpi-fill{background:var(--c-green)}.e .kpi-fill{background:var(--c-amber)}.a .kpi-fill{background:var(--c-red)}
+
+/* ── MODULE GRID ── */
+.mod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+.module{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;animation:modFade .6s ease forwards;opacity:0}
+.module:nth-child(1){animation-delay:.1s}.module:nth-child(2){animation-delay:.2s}.module:nth-child(3){animation-delay:.3s}
+@keyframes modFade{to{opacity:1}}
+.mod-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)}
+.mod-title{display:flex;align-items:center;gap:9px;font-family:var(--font-d);font-size:10px;font-weight:700;letter-spacing:.08em;color:var(--text-hi)}
+.mod-dot{width:7px;height:7px;border-radius:50%}
+.mod-status{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;padding:3px 8px;border-radius:3px}
+.s-ok{color:var(--c-green);border:1px solid rgba(57,255,106,.28);background:rgba(57,255,106,.05)}
+.s-warn{color:var(--c-amber);border:1px solid rgba(255,171,0,.28);background:rgba(255,171,0,.05)}
+.s-crit{color:var(--c-red);border:1px solid rgba(255,61,113,.28);background:rgba(255,61,113,.05)}
+.mod-body{padding:16px}
+
+/* ── TRAFFIC MAP ── */
+.traf-map{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;margin-bottom:12px}
+.traf-cell{height:24px;border-radius:3px;cursor:pointer;transition:transform .15s;position:relative}
+.traf-cell:hover{transform:scale(1.15);z-index:5}
+.tl{background:rgba(0,229,255,.13);border:1px solid rgba(0,229,255,.26)}
+.tm{background:rgba(255,171,0,.17);border:1px solid rgba(255,171,0,.34)}
+.th{background:rgba(255,61,113,.2);border:1px solid rgba(255,61,113,.42)}
+.traf-leg{display:flex;gap:12px}
+.leg-item{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9px;color:var(--text-dim)}
+.leg-sq{width:8px;height:8px;border-radius:1px}
+.route-rows{display:flex;flex-direction:column;gap:6px;margin-top:11px}
+.route-row{display:flex;align-items:center;font-size:11px;padding:6px 9px;background:rgba(255,255,255,.025);border-radius:4px;border:1px solid var(--border);gap:8px}
+.route-fw{flex:1;height:3px;background:var(--border);border-radius:2px;overflow:hidden}
+.route-fill{height:100%;border-radius:2px}
+.route-v{font-family:var(--font-m);font-size:10px;color:var(--text-dim);flex-shrink:0}
+
+/* ── WASTE ZONES ── */
+.waste-zones{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:12px}
+.wz{padding:9px;border:1px solid var(--border);border-radius:5px;background:rgba(255,255,255,.018)}
+.wz-name{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.1em;margin-bottom:7px}
+.bin-row{display:flex;gap:3px;align-items:flex-end;height:34px}
+.bin{flex:1;border-radius:2px 2px 0 0;min-height:3px}
+.bo{background:rgba(57,255,106,.28);border:1px solid rgba(57,255,106,.48)}
+.br{background:rgba(0,229,255,.28);border:1px solid rgba(0,229,255,.48)}
+.bg2{background:rgba(255,171,0,.28);border:1px solid rgba(255,171,0,.48)}
+.bh{background:rgba(255,61,113,.28);border:1px solid rgba(255,61,113,.48)}
+.wz-pct{font-family:var(--font-d);font-size:15px;font-weight:700;color:var(--text-hi);margin-top:5px}
+.coll-rows{display:flex;flex-direction:column;gap:5px}
+.coll-row{display:flex;align-items:center;justify-content:space-between;font-size:11px;padding:5px 9px;background:rgba(255,255,255,.022);border-radius:4px}
+.coll-tag{font-family:var(--font-m);font-size:9px;padding:2px 6px;border-radius:2px}
+.tag-s{background:rgba(0,229,255,.1);color:var(--c-cyan)}
+.tag-p{background:rgba(255,171,0,.1);color:var(--c-amber)}
+.tag-d{background:rgba(57,255,106,.1);color:var(--c-green)}
+
+/* ── ENERGY ── */
+.energy-top{display:flex;align-items:center;gap:16px;margin-bottom:12px}
+.e-sources{flex:1;display:flex;flex-direction:column;gap:6px}
+.e-src{display:flex;align-items:center;gap:7px;font-size:11px}
+.e-dot{width:8px;height:8px;border-radius:2px;flex-shrink:0}
+.e-name{flex:1;color:var(--text)}
+.e-pct{font-family:var(--font-m);font-size:10px;color:var(--text-dim)}
+.spark-lbl{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.1em;margin-bottom:4px}
+.sparkline{width:100%;height:46px}
+
+/* ── ANALYTICS CHARTS ── */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.chart-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px}
+.chart-title{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-hi);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.chart-full{grid-column:1 / -1}
+.chart-canvas-wrap{position:relative;height:180px}
+
+/* ── BOTTOM ROW ── */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.btm-panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.btm-head{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--border)}
+.btm-title{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-hi)}
+.btm-body{padding:14px 16px}
+.decision-card{padding:12px;border-radius:5px;border-left:3px solid;background:rgba(255,255,255,.022);margin-bottom:9px;cursor:pointer;transition:background .2s}
+.decision-card:last-child{margin-bottom:0}
+.decision-card:hover{background:rgba(255,255,255,.05)}
+.d-high{border-color:var(--c-red)}.d-med{border-color:var(--c-amber)}.d-low{border-color:var(--c-green)}
+.d-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.d-title{font-size:12px;font-weight:600;color:var(--text-hi)}
+.d-badge{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;padding:2px 6px;border-radius:2px;flex-shrink:0;margin-left:7px}
+.b-high{background:rgba(255,61,113,.1);color:var(--c-red)}
+.b-med{background:rgba(255,171,0,.1);color:var(--c-amber)}
+.b-low{background:rgba(57,255,106,.1);color:var(--c-green)}
+.d-desc{font-size:11px;color:var(--text-dim);line-height:1.5}
+.d-actions{display:flex;gap:6px;margin-top:8px}
+.d-btn{font-family:var(--font-m);font-size:10px;padding:4px 11px;border-radius:3px;border:none;cursor:none;transition:all .2s}
+.d-approve{background:rgba(57,255,106,.1);color:var(--c-green);border:1px solid rgba(57,255,106,.22)}
+.d-approve:hover{background:rgba(57,255,106,.22)}
+.d-defer{background:rgba(255,255,255,.05);color:var(--text-dim);border:1px solid var(--border)}
+.d-defer:hover{color:var(--text-hi)}
+.act-feed{max-height:300px;overflow-y:auto;display:flex;flex-direction:column}
+.act-feed::-webkit-scrollbar{width:3px}
+.act-feed::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.act-item{display:flex;gap:9px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.03);animation:actIn .35s ease}
+@keyframes actIn{from{opacity:0;transform:translateX(-7px)}to{opacity:1;transform:none}}
+.act-icon{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0}
+.ai-t{background:var(--glow-c)}.ai-w{background:var(--glow-g)}.ai-e{background:var(--glow-a)}.ai-s{background:rgba(57,255,106,.07)}
+.act-msg{font-size:11px;color:var(--text);line-height:1.4}
+.act-time{font-family:var(--font-m);font-size:9px;color:var(--text-dim);margin-top:2px}
+
+/* ── ADMIN ── */
+.admin-tabs{display:flex;gap:3px;background:rgba(255,255,255,.03);padding:4px;border-radius:var(--r);border:1px solid var(--border);margin-bottom:20px;overflow-x:auto}
+.admin-tab{font-family:var(--font-m);font-size:10px;letter-spacing:.08em;padding:8px 17px;border-radius:4px;cursor:none;transition:all .2s;color:var(--text-dim);white-space:nowrap;border:1px solid transparent;display:flex;align-items:center;gap:6px}
+.admin-tab.active{background:rgba(0,229,255,.09);color:var(--c-cyan);border-color:rgba(0,229,255,.18)}
+.admin-tab:not(.active):hover{background:rgba(255,255,255,.04);color:var(--text)}
+.admin-section{display:none}
+.admin-section.active{display:block}
+.admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px}
+.admin-stat{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:18px}
+.admin-stat-val{font-family:var(--font-d);font-size:28px;font-weight:900;color:var(--text-hi)}
+.admin-stat-lbl{font-family:var(--font-m);font-size:9px;color:var(--text-dim);letter-spacing:.12em;margin-top:3px}
+.admin-stat-ch{font-family:var(--font-m);font-size:10px;margin-top:6px}
+
+.db-wrap{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px}
+.db-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border)}
+.db-title{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-hi)}
+.db-acts{display:flex;gap:7px}
+.db-btn{font-family:var(--font-m);font-size:10px;padding:6px 13px;border-radius:4px;cursor:none;transition:all .2s;border:none}
+.db-add{background:rgba(57,255,106,.1);color:var(--c-green);border:1px solid rgba(57,255,106,.22)}
+.db-add:hover{background:rgba(57,255,106,.22)}
+.db-exp{background:rgba(0,229,255,.07);color:var(--c-cyan);border:1px solid rgba(0,229,255,.18)}
+.db-exp:hover{background:rgba(0,229,255,.16)}
+
+table{width:100%;border-collapse:collapse}
+th{font-family:var(--font-m);font-size:9px;letter-spacing:.12em;color:var(--text-dim);text-align:left;padding:9px 18px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:11px 18px;font-size:12px;color:var(--text);border-bottom:1px solid rgba(255,255,255,.03)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.018)}
+.td-badge{display:inline-block;font-family:var(--font-m);font-size:9px;letter-spacing:.1em;padding:2px 7px;border-radius:3px}
+.td-acts{display:flex;gap:5px}
+.td-btn{font-family:var(--font-m);font-size:9px;padding:3px 9px;border-radius:3px;border:none;cursor:none;transition:all .2s}
+.td-edit{background:rgba(0,229,255,.07);color:var(--c-cyan);border:1px solid rgba(0,229,255,.18)}
+.td-edit:hover{background:rgba(0,229,255,.17)}
+.td-del{background:rgba(255,61,113,.07);color:var(--c-red);border:1px solid rgba(255,61,113,.18)}
+.td-del:hover{background:rgba(255,61,113,.17)}
+
+.config-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.cfg-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:20px}
+.cfg-title{font-family:var(--font-d);font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--text-hi);margin-bottom:16px;display:flex;align-items:center;gap:7px}
+.cfg-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:13px}
+.cfg-label{font-size:12px;color:var(--text)}
+.cfg-sub{font-family:var(--font-m);font-size:9px;color:var(--text-dim);margin-top:2px}
+.toggle{width:40px;height:20px;border-radius:10px;background:var(--border2);position:relative;cursor:none;transition:background .2s;flex-shrink:0}
+.toggle.on{background:rgba(57,255,106,.28)}
+.toggle::after{content:'';position:absolute;width:14px;height:14px;border-radius:50%;background:var(--text-dim);top:3px;left:3px;transition:transform .2s,background .2s}
+.toggle.on::after{transform:translateX(20px);background:var(--c-green)}
+.range-row{margin-bottom:13px}
+.range-top{display:flex;justify-content:space-between;margin-bottom:5px}
+.range-name{font-size:12px;color:var(--text)}
+.range-v{font-family:var(--font-m);font-size:10px;color:var(--c-cyan)}
+input[type="range"]{width:100%;-webkit-appearance:none;height:3px;border-radius:2px;background:var(--border2);outline:none;cursor:none}
+input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:13px;height:13px;border-radius:50%;background:var(--c-cyan);cursor:none;box-shadow:0 0 7px var(--c-cyan)}
+.u-role{font-family:var(--font-m);font-size:9px;letter-spacing:.1em;padding:3px 8px;border-radius:3px}
+.r-admin{background:rgba(157,107,255,.1);color:var(--c-violet)}
+.r-resident{background:rgba(0,229,255,.09);color:var(--c-cyan)}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(4,7,15,.88);backdrop-filter:blur(10px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:34px;width:100%;max-width:470px;animation:modalIn .28s ease;box-shadow:0 40px 90px rgba(0,0,0,.7)}
+@keyframes modalIn{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:none}}
+.modal-title{font-family:var(--font-d);font-size:13px;font-weight:700;letter-spacing:.1em;color:var(--text-hi);margin-bottom:22px;display:flex;align-items:center;justify-content:space-between}
+.modal-x{background:none;border:none;color:var(--text-dim);font-size:17px;cursor:none}
+.modal-x:hover{color:var(--text-hi)}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.span-2{grid-column:1/-1}
+.modal-actions{display:flex;gap:9px;margin-top:22px;justify-content:flex-end}
+select.form-input{cursor:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%234a6080' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px;-webkit-appearance:none;appearance:none}
+select.form-input option{background:var(--panel)}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:28px;right:28px;font-family:var(--font-m);font-size:11px;padding:11px 18px;border-radius:6px;z-index:9999;animation:toastIn .3s ease}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.toast-ok{background:rgba(57,255,106,.1);border:1px solid rgba(57,255,106,.28);color:var(--c-green)}
+.toast-err{background:rgba(255,61,113,.1);border:1px solid rgba(255,61,113,.28);color:var(--c-red)}
+.toast-info{background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.22);color:var(--c-cyan)}
+
+/* ── LOADING STATE ── */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text-dim);font-family:var(--font-m);font-size:11px;letter-spacing:.15em}
+.loading::before{content:'';width:16px;height:16px;border:2px solid var(--border2);border-top-color:var(--c-cyan);border-radius:50%;margin-right:12px;animation:spin 1s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MISC ── */
+.text-cyan{color:var(--c-cyan)}.text-green{color:var(--c-green)}.text-amber{color:var(--c-amber)}.text-red{color:var(--c-red)}.text-dim{color:var(--text-dim)}
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+<canvas id="starCanvas"></canvas>
+
+<!-- ══════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════ -->
+<div id="page-landing" class="page active">
+  <div class="hex-grid"></div>
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+
+  <nav role="navigation" aria-label="Main navigation">
+    <a href="#" class="nav-logo" aria-label="NEXUS Home">
+      <div class="nav-logo-hex">
+        <svg viewBox="0 0 34 34" fill="none"><polygon points="17,2 32,9.5 32,24.5 17,32 2,24.5 2,9.5" stroke="rgba(0,229,255,0.45)" stroke-width="1.2"/></svg>
+        <div class="nav-logo-inner"></div>
+      </div>
+      <span class="nav-logo-text">NEXUS</span>
+    </a>
+    <ul class="nav-links" role="list">
+      <li><a href="#features">FEATURES</a></li>
+      <li><a href="#" onclick="showPage('page-login');return false">SIGN IN</a></li>
+    </ul>
+    <div class="nav-btns">
+      <button class="btn btn-ghost" onclick="openLogin('resident')">RESIDENT LOGIN</button>
+      <button class="btn btn-amber" onclick="openLogin('admin')">ADMIN ACCESS →</button>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="hero-tag"><div class="hero-tag-dot"></div>AI-POWERED URBAN INTELLIGENCE PLATFORM</div>
+      <h1 class="hero-title" id="hero-title">
+        <span>THE CITY</span><br>
+        <span class="accent">THINKS.</span>
+      </h1>
+      <p class="hero-sub">NEXUS unifies traffic flow, waste operations, and energy distribution into one real-time decision intelligence platform for modern cities.</p>
+      <div class="hero-ctas">
+        <button class="btn btn-primary btn-hero" onclick="openLogin('resident')">RESIDENT DASHBOARD →</button>
+        <button class="btn btn-ghost btn-hero" onclick="openLogin('register')">CREATE ACCOUNT</button>
+      </div>
+      <div class="city-ring-wrap" role="img" aria-label="City stats visualization">
+        <div class="ring ring-1"></div><div class="ring ring-2"></div>
+        <div class="ring ring-3"></div><div class="ring ring-4"></div>
+        <div class="city-core"><div class="city-core-score" id="landingScore">72</div><div class="city-core-label">CITY SCORE</div></div>
+        <div class="stat-node node-t"><div class="stat-node-val" id="landingTraffic">24<small style="font-size:11px">min</small></div><div class="stat-node-lbl">AVG COMMUTE</div></div>
+        <div class="stat-node node-w"><div class="stat-node-val" id="landingWaste">61<small style="font-size:11px">%</small></div><div class="stat-node-lbl">AVG CAPACITY</div></div>
+        <div class="stat-node node-e"><div class="stat-node-val" id="landingEnergy">38<small style="font-size:11px">MW</small></div><div class="stat-node-lbl">ENERGY LOAD</div></div>
+      </div>
+    </section>
+
+    <section id="features" class="features" aria-labelledby="features-title">
+      <p class="section-tag">PLATFORM MODULES</p>
+      <h2 class="section-title" id="features-title">THREE SYSTEMS. ONE BRAIN.</h2>
+      <div class="feature-grid">
+        <article class="feature-card f-t">
+          <div class="feature-accent" style="background:var(--c-cyan)"></div>
+          <span class="feature-icon">🚦</span>
+          <h3 class="feature-title">TRAFFIC INTELLIGENCE</h3>
+          <p class="feature-desc">Real-time congestion mapping across all city sectors with AI-driven signal optimization and automated incident rerouting.</p>
+        </article>
+        <article class="feature-card f-w">
+          <div class="feature-accent" style="background:var(--c-green)"></div>
+          <span class="feature-icon">♻️</span>
+          <h3 class="feature-title">WASTE OPTIMIZATION</h3>
+          <p class="feature-desc">Smart bin sensors and dynamic route planning for collection fleets. Zone-level fill monitoring with predictive overflow alerts.</p>
+        </article>
+        <article class="feature-card f-e">
+          <div class="feature-accent" style="background:var(--c-amber)"></div>
+          <span class="feature-icon">⚡</span>
+          <h3 class="feature-title">ENERGY MANAGEMENT</h3>
+          <p class="feature-desc">Multi-source power distribution from solar, wind, gas and grid. Demand response activation and renewable source prioritization.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="cta-section">
+      <h2>YOUR CITY, INTELLIGENTLY MANAGED.</h2>
+      <p>Join the platform powering next-generation urban operations.</p>
+      <div style="display:flex;gap:14px;justify-content:center">
+        <button class="btn btn-primary btn-hero" onclick="openLogin('register')">CREATE ACCOUNT</button>
+        <button class="btn btn-ghost btn-hero" onclick="openLogin('admin')">ADMIN CONSOLE</button>
+      </div>
+    </section>
+  </main>
+  <footer role="contentinfo"><p>© 2026 NEXUS CITY INTELLIGENCE PLATFORM · ALL RIGHTS RESERVED</p></footer>
+</div>
+
+<!-- ══════════════════════════════════════
+     AUTH PAGE (Login / Register / Admin)
+══════════════════════════════════════ -->
+<div id="page-login" class="page">
+  <div class="hex-grid"></div>
+  <div class="orb orb-1"></div><div class="orb orb-2"></div>
+
+  <div class="auth-card" role="main">
+    <div class="auth-logo">
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px">
+        <div style="width:30px;height:30px;background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.28);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%);display:flex;align-items:center;justify-content:center">
+          <div style="width:11px;height:11px;background:var(--c-cyan);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)"></div>
+        </div>
+        <div class="auth-logo-title">NEXUS</div>
+      </div>
+      <div class="auth-logo-sub">SMART CITY INTELLIGENCE PLATFORM</div>
+    </div>
+
+    <div class="auth-tabs" role="tablist">
+      <div class="auth-tab active" id="tab-resident" onclick="switchAuthTab('resident')" role="tab">👤 RESIDENT</div>
+      <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')" role="tab">✨ REGISTER</div>
+      <div class="auth-tab" id="tab-admin" onclick="switchAuthTab('admin')" role="tab">🛡 ADMIN</div>
+    </div>
+
+    <div class="form-error" id="authError" role="alert"></div>
+    <div class="form-success" id="authSuccess" role="status"></div>
+
+    <!-- LOGIN FORM -->
+    <form id="loginForm" onsubmit="handleLogin(event)" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="loginEmail">EMAIL ADDRESS</label>
+        <input class="form-input" type="email" id="loginEmail" placeholder="your@city.gov" autocomplete="email" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="loginPass">PASSWORD</label>
+        <input class="form-input" type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password" required>
+        <div class="form-hint" id="loginHint">Demo: <span class="text-cyan">user@nexus.city</span> / <span class="text-cyan">user123</span></div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-full" id="loginBtn">SIGN IN AS RESIDENT</button>
+    </form>
+
+    <!-- REGISTER FORM -->
+    <form id="registerForm" onsubmit="handleRegister(event)" style="display:none" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="regName">FULL NAME</label>
+        <input class="form-input" type="text" id="regName" placeholder="Your full name" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regEmail">EMAIL ADDRESS</label>
+        <input class="form-input" type="email" id="regEmail" placeholder="your@email.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regPass">PASSWORD</label>
+        <input class="form-input" type="password" id="regPass" placeholder="Min. 6 characters" required>
+        <div class="form-hint">You'll be registered as a city resident.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="regPass2">CONFIRM PASSWORD</label>
+        <input class="form-input" type="password" id="regPass2" placeholder="Repeat password" required>
+      </div>
+      <button type="submit" class="btn btn-green btn-full" id="registerBtn">CREATE ACCOUNT</button>
+    </form>
+
+    <a href="#" class="auth-back" onclick="showPage('page-landing');return false">← BACK TO HOME</a>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     USER DASHBOARD
+══════════════════════════════════════ -->
+<div id="page-user" class="page">
+  <div class="dash-layout">
+    <aside class="sidebar" role="navigation" aria-label="Dashboard navigation">
+      <div class="sb-logo"><div style="width:16px;height:16px;background:var(--c-cyan);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)"></div></div>
+      <div class="sb-item active" onclick="showDashSection('overview')"><span class="sb-icon">📊</span><span class="sb-label">OVERVIEW</span></div>
+      <div class="sb-item" onclick="showDashSection('analytics')"><span class="sb-icon">📈</span><span class="sb-label">ANALYTICS</span></div>
+      <div class="sb-item" onclick="showDashSection('traffic')"><span class="sb-icon">🚗</span><span class="sb-label">TRAFFIC</span></div>
+      <div class="sb-item" onclick="showDashSection('waste')"><span class="sb-icon">♻️</span><span class="sb-label">WASTE</span></div>
+      <div class="sb-item" onclick="showDashSection('energy')"><span class="sb-icon">⚡</span><span class="sb-label">ENERGY</span></div>
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="sb-avatar" id="userAvatar">R</div>
+          <div class="sb-user-info">
+            <div class="sb-user-name" id="userNameDisplay">Resident</div>
+            <div class="sb-user-role">CITY RESIDENT</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="dash-main">
+      <header class="topbar">
+        <div>
+          <div class="topbar-title">CITY OVERVIEW DASHBOARD</div>
+          <div class="topbar-sub" id="dashSub">METRO DISTRICT · ZONE A1 · LIVE DATA</div>
+        </div>
+        <div class="topbar-right">
+          <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+          <div class="topbar-clock" id="dashClock"></div>
+          <button class="topbar-logout" onclick="logout()">SIGN OUT</button>
+        </div>
+      </header>
+
+      <main class="dash-content">
+        <!-- OVERVIEW SECTION -->
+        <div id="sec-overview">
+          <div class="alert-bar" id="dashAlert">
+            <div class="alert-tag">⚠ ALERT</div>
+            <div class="alert-msg" id="alertMsg">Loading live alerts…</div>
+            <button class="alert-x" onclick="this.closest('.alert-bar').remove()">×</button>
+          </div>
+
+          <div class="score-row">
+            <div class="score-card">
+              <div class="score-lbl">CITY EFFICIENCY SCORE</div>
+              <div class="score-num" id="scoreCounter">0</div>
+              <div class="score-unit">/ 100 INDEX</div>
+              <div class="score-delta" id="scoreDelta">Calculating…</div>
+            </div>
+            <div class="kpi-row" id="kpiRow">
+              <div class="loading"></div>
+            </div>
+          </div>
+
+          <div class="mod-grid" id="modGrid">
+            <div class="loading" style="grid-column:1/-1"></div>
+          </div>
+
+          <div class="bottom-row">
+            <div class="btm-panel">
+              <div class="btm-head"><div class="btm-title">PENDING DECISIONS</div><div class="mod-status s-warn" id="decisionCount">…</div></div>
+              <div class="btm-body" id="decisionsContainer"><div class="loading"></div></div>
+            </div>
+            <div class="btm-panel">
+              <div class="btm-head"><div class="btm-title">SYSTEM ACTIVITY</div><div class="mod-status s-ok">LIVE</div></div>
+              <div class="btm-body"><div class="act-feed" id="activityFeed"><div class="loading"></div></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ANALYTICS SECTION -->
+        <div id="sec-analytics" style="display:none">
+          <div class="chart-grid">
+            <div class="chart-card">
+              <div class="chart-title"><span style="color:var(--c-cyan)">●</span> TRAFFIC CONGESTION TREND</div>
+              <div class="chart-canvas-wrap"><canvas id="chartTrafficTrend"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><span style="color:var(--c-amber)">●</span> ENERGY DEMAND TREND</div>
+              <div class="chart-canvas-wrap"><canvas id="chartEnergyTrend"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><span style="color:var(--c-green)">●</span> WASTE CAPACITY BY ZONE</div>
+              <div class="chart-canvas-wrap"><canvas id="chartWasteZones"></canvas></div>
+            </div>
+            <div class="chart-card">
+              <div class="chart-title"><span style="color:var(--c-amber)">●</span> ENERGY SOURCE BREAKDOWN</div>
+              <div class="chart-canvas-wrap"><canvas id="chartEnergyDonut"></canvas></div>
+            </div>
+            <div class="chart-card chart-full">
+              <div class="chart-title"><span style="color:var(--c-cyan)">●</span> TRAFFIC CONGESTION BY SECTOR</div>
+              <div class="chart-canvas-wrap" style="height:200px"><canvas id="chartTrafficSectors"></canvas></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TRAFFIC DETAIL SECTION -->
+        <div id="sec-traffic" style="display:none">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">🚗 LIVE TRAFFIC SENSORS</div></div>
+            <table><thead><tr><th>SENSOR</th><th>LOCATION</th><th>SECTOR</th><th>CONGESTION</th><th>AVG SPEED</th><th>STATUS</th><th>UPDATED</th></tr></thead>
+            <tbody id="trafficDetailTable"><tr><td colspan="7" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- WASTE DETAIL SECTION -->
+        <div id="sec-waste" style="display:none">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">♻️ WASTE FACILITY STATUS</div></div>
+            <table><thead><tr><th>ZONE</th><th>FACILITY</th><th>CAPACITY</th><th>LAST PICKUP</th><th>NEXT PICKUP</th><th>STATUS</th></tr></thead>
+            <tbody id="wasteDetailTable"><tr><td colspan="6" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- ENERGY DETAIL SECTION -->
+        <div id="sec-energy" style="display:none">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">⚡ ENERGY SOURCES</div></div>
+            <table><thead><tr><th>SOURCE</th><th>TYPE</th><th>OUTPUT (MW)</th><th>CAPACITY %</th><th>COST/MWH</th><th>STATUS</th></tr></thead>
+            <tbody id="energyDetailTable"><tr><td colspan="6" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     ADMIN DASHBOARD
+══════════════════════════════════════ -->
+<div id="page-admin" class="page">
+  <div class="dash-layout">
+    <aside class="sidebar" role="navigation">
+      <div class="sb-logo"><div style="width:16px;height:16px;background:var(--c-amber);clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)"></div></div>
+      <div class="sb-item active"><span class="sb-icon">📊</span><span class="sb-label">CONSOLE</span></div>
+      <div class="sb-item"><span class="sb-icon">🗃️</span><span class="sb-label">DATABASE</span></div>
+      <div class="sb-item"><span class="sb-icon">👥</span><span class="sb-label">USERS</span></div>
+      <div class="sb-item"><span class="sb-icon">⚙️</span><span class="sb-label">CONFIG</span></div>
+      <div class="sb-bottom">
+        <div class="sb-user">
+          <div class="sb-avatar" style="background:linear-gradient(135deg,var(--c-amber),var(--c-red))">A</div>
+          <div class="sb-user-info">
+            <div class="sb-user-name">Administrator</div>
+            <div class="sb-user-role" style="color:var(--c-amber)">ADMIN</div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="dash-main">
+      <header class="topbar">
+        <div>
+          <div class="topbar-title" style="color:var(--c-amber)">NEXUS ADMIN CONSOLE</div>
+          <div class="topbar-sub">FULL SYSTEM ACCESS · DATABASE MANAGEMENT</div>
+        </div>
+        <div class="topbar-right">
+          <div class="live-badge" style="color:var(--c-amber);background:rgba(255,171,0,.07);border-color:rgba(255,171,0,.18)"><div class="live-dot" style="background:var(--c-amber)"></div>ADMIN</div>
+          <div class="topbar-clock" id="adminClock"></div>
+          <button class="topbar-logout" onclick="logout()">SIGN OUT</button>
+        </div>
+      </header>
+
+      <main class="dash-content">
+        <nav class="admin-tabs" role="tablist">
+          <div class="admin-tab active" onclick="switchAdminTab('overview')" role="tab">📊 OVERVIEW</div>
+          <div class="admin-tab" onclick="switchAdminTab('traffic')" role="tab">🚗 TRAFFIC DB</div>
+          <div class="admin-tab" onclick="switchAdminTab('waste')" role="tab">♻️ WASTE DB</div>
+          <div class="admin-tab" onclick="switchAdminTab('energy')" role="tab">⚡ ENERGY DB</div>
+          <div class="admin-tab" onclick="switchAdminTab('users')" role="tab">👥 USERS</div>
+          <div class="admin-tab" onclick="switchAdminTab('config')" role="tab">⚙️ CONFIG</div>
+        </nav>
+
+        <!-- OVERVIEW -->
+        <div class="admin-section active" id="asec-overview">
+          <div class="admin-stats" id="adminStats"><div class="loading" style="grid-column:1/-1"></div></div>
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">SYSTEM HEALTH</div><div class="db-acts"><button class="db-btn db-exp" onclick="exportCSV('health')">⬇ EXPORT</button></div></div>
+            <table><thead><tr><th>MODULE</th><th>STATUS</th><th>RECORDS</th><th>CRITICAL ITEMS</th><th>LAST UPDATE</th></tr></thead>
+            <tbody id="adminHealthTable"><tr><td colspan="5" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- TRAFFIC DB -->
+        <div class="admin-section" id="asec-traffic">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">🚗 TRAFFIC SENSOR DATABASE</div><div class="db-acts">
+              <button class="db-btn db-add" onclick="openModal('traffic')">+ ADD SENSOR</button>
+              <button class="db-btn db-exp" onclick="exportCSV('traffic')">⬇ EXPORT</button>
+            </div></div>
+            <table><thead><tr><th>ID</th><th>SENSOR</th><th>LOCATION</th><th>SECTOR</th><th>CONGESTION</th><th>SPEED (KPH)</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminTrafficTable"><tr><td colspan="8" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- WASTE DB -->
+        <div class="admin-section" id="asec-waste">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">♻️ WASTE FACILITY DATABASE</div><div class="db-acts">
+              <button class="db-btn db-add" onclick="openModal('waste')">+ ADD FACILITY</button>
+              <button class="db-btn db-exp" onclick="exportCSV('waste')">⬇ EXPORT</button>
+            </div></div>
+            <table><thead><tr><th>ID</th><th>CODE</th><th>ZONE</th><th>NAME</th><th>CAPACITY %</th><th>STATUS</th><th>NEXT PICKUP</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminWasteTable"><tr><td colspan="8" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- ENERGY DB -->
+        <div class="admin-section" id="asec-energy">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">⚡ ENERGY SOURCE DATABASE</div><div class="db-acts">
+              <button class="db-btn db-add" onclick="openModal('energy')">+ ADD SOURCE</button>
+              <button class="db-btn db-exp" onclick="exportCSV('energy')">⬇ EXPORT</button>
+            </div></div>
+            <table><thead><tr><th>ID</th><th>CODE</th><th>NAME</th><th>TYPE</th><th>OUTPUT (MW)</th><th>CAPACITY %</th><th>COST/MWH</th><th>STATUS</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminEnergyTable"><tr><td colspan="9" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- USERS -->
+        <div class="admin-section" id="asec-users">
+          <div class="db-wrap">
+            <div class="db-head"><div class="db-title">👥 USER MANAGEMENT</div><div class="db-acts">
+              <button class="db-btn db-add" onclick="openModal('user')">+ ADD USER</button>
+              <button class="db-btn db-exp" onclick="exportCSV('users')">⬇ EXPORT</button>
+            </div></div>
+            <table><thead><tr><th>ID</th><th>NAME</th><th>EMAIL</th><th>ROLE</th><th>REGISTERED</th><th>LAST ACTIVE</th><th>ACTIONS</th></tr></thead>
+            <tbody id="adminUsersTable"><tr><td colspan="7" class="loading" style="text-align:center"></td></tr></tbody></table>
+          </div>
+        </div>
+
+        <!-- CONFIG -->
+        <div class="admin-section" id="asec-config">
+          <div class="config-grid">
+            <div class="cfg-card">
+              <div class="cfg-title">🚗 Traffic Settings</div>
+              <div class="cfg-row"><div><div class="cfg-label">Auto-Rerouting</div><div class="cfg-sub">Activate when congestion &gt; threshold</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="cfg-row"><div><div class="cfg-label">Adaptive Signals</div><div class="cfg-sub">AI-controlled signal timing</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="range-row"><div class="range-top"><div class="range-name">Congestion Threshold</div><div class="range-v" id="rv-cong">80%</div></div><input type="range" min="50" max="95" value="80" oninput="document.getElementById('rv-cong').textContent=this.value+'%'"></div>
+            </div>
+            <div class="cfg-card">
+              <div class="cfg-title">♻️ Waste Settings</div>
+              <div class="cfg-row"><div><div class="cfg-label">Auto-Dispatch Trucks</div><div class="cfg-sub">Send truck when bin &gt; threshold</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="cfg-row"><div><div class="cfg-label">Smart Route Planning</div><div class="cfg-sub">AI-optimized collection routes</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="range-row"><div class="range-top"><div class="range-name">Dispatch Threshold</div><div class="range-v" id="rv-waste">85%</div></div><input type="range" min="60" max="98" value="85" oninput="document.getElementById('rv-waste').textContent=this.value+'%'"></div>
+            </div>
+            <div class="cfg-card">
+              <div class="cfg-title">⚡ Energy Settings</div>
+              <div class="cfg-row"><div><div class="cfg-label">Demand Response</div><div class="cfg-sub">Notify buildings at peak load</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="cfg-row"><div><div class="cfg-label">Renewable Priority</div><div class="cfg-sub">Prefer solar/wind over gas</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="range-row"><div class="range-top"><div class="range-name">Peak Threshold (MW)</div><div class="range-v" id="rv-peak">35</div></div><input type="range" min="20" max="60" value="35" oninput="document.getElementById('rv-peak').textContent=this.value"></div>
+            </div>
+            <div class="cfg-card">
+              <div class="cfg-title">🔔 Alert Settings</div>
+              <div class="cfg-row"><div><div class="cfg-label">SMS Alerts</div><div class="cfg-sub">Text ops team on critical events</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+              <div class="cfg-row"><div><div class="cfg-label">Email Digest</div><div class="cfg-sub">Daily summary at 07:00</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+              <div class="cfg-row"><div><div class="cfg-label">Dashboard Alerts</div><div class="cfg-sub">Show banner for all incidents</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+            </div>
+          </div>
+          <div style="margin-top:14px;display:flex;gap:10px">
+            <button class="btn btn-primary" onclick="saveConfig()">SAVE CONFIGURATION</button>
+            <button class="btn btn-ghost">RESET DEFAULTS</button>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-title"><span id="modalTitle">RECORD</span><button class="modal-x" onclick="closeModal()">×</button></div>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">CANCEL</button>
+      <button class="btn btn-primary" id="modalSaveBtn" onclick="saveModal()">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════ -->
+<script>
+// ── CONFIG ──────────────────────────────────────────────────
+const API = 'http://localhost:3001/api'; // ← change to your deployed backend URL
+let socket = null;
+let currentModalType = '';
+let currentEditId = null;
+let charts = {};
+
+// ── CURSOR ──────────────────────────────────────────────────
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+document.addEventListener('mousemove', e => {
+  cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px';
+  cursorRing.style.left = e.clientX + 'px'; cursorRing.style.top = e.clientY + 'px';
+});
+document.addEventListener('mousedown', () => { cursor.style.width = '16px'; cursor.style.height = '16px'; });
+document.addEventListener('mouseup',   () => { cursor.style.width = '10px'; cursor.style.height = '10px'; });
+
+// ── STARS ───────────────────────────────────────────────────
+(function initStars() {
+  const canvas = document.getElementById('starCanvas');
+  const ctx = canvas.getContext('2d');
+  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  const stars = Array.from({length:160}, () => ({
+    x: Math.random() * canvas.width, y: Math.random() * canvas.height,
+    r: Math.random() * 1.1 + 0.2, a: Math.random(),
+    speed: Math.random() * 0.003 + 0.001, t: Math.random() * Math.PI * 2
+  }));
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    stars.forEach(s => {
+      s.t += s.speed;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(180,220,255,${s.a * (0.4 + 0.6 * Math.abs(Math.sin(s.t)))})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+
+// ── CLOCKS ──────────────────────────────────────────────────
+function tick() {
+  const t = new Date().toLocaleTimeString('en-GB');
+  ['dashClock','adminClock'].forEach(id => { const el = document.getElementById(id); if (el) el.textContent = t; });
+}
+tick(); setInterval(tick, 1000);
+
+// ── TOKEN HELPERS ────────────────────────────────────────────
+const getToken = () => localStorage.getItem('nexus_token');
+const getUser  = () => JSON.parse(localStorage.getItem('nexus_user') || 'null');
+
+async function apiFetch(path, options = {}) {
+  const token = getToken();
+  const res = await fetch(API + path, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { 'Authorization': 'Bearer ' + token } : {}),
+      ...options.headers
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
+}
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg, type = 'ok') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = type === 'ok' ? '✓ ' + msg : type === 'err' ? '✕ ' + msg : 'ℹ ' + msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+}
+
+// ── PAGE ROUTING ─────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function openLogin(tab) {
+  switchAuthTab(tab);
+  showPage('page-login');
+}
+
+// ── AUTH TABS ─────────────────────────────────────────────────
+let currentAuthTab = 'resident';
+function switchAuthTab(tab) {
+  currentAuthTab = tab;
+  ['resident','register','admin'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === tab);
+  });
+  document.getElementById('loginForm').style.display    = (tab === 'resident' || tab === 'admin') ? 'block' : 'none';
+  document.getElementById('registerForm').style.display = tab === 'register' ? 'block' : 'none';
+  clearAuthMessages();
+
+  if (tab === 'admin') {
+    document.getElementById('loginBtn').textContent = 'SIGN IN AS ADMINISTRATOR';
+    document.getElementById('loginBtn').className = 'btn btn-amber btn-full';
+    document.getElementById('loginHint').innerHTML = 'Demo: <span class="text-amber">admin@nexus.city</span> / <span class="text-amber">admin123</span>';
+  } else {
+    document.getElementById('loginBtn').textContent = 'SIGN IN AS RESIDENT';
+    document.getElementById('loginBtn').className = 'btn btn-primary btn-full';
+    document.getElementById('loginHint').innerHTML = 'Demo: <span class="text-cyan">user@nexus.city</span> / <span class="text-cyan">user123</span>';
+  }
+}
+
+function clearAuthMessages() {
+  document.getElementById('authError').classList.remove('show');
+  document.getElementById('authSuccess').classList.remove('show');
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg; el.classList.add('show');
+  document.getElementById('authSuccess').classList.remove('show');
+}
+
+function showAuthSuccess(msg) {
+  const el = document.getElementById('authSuccess');
+  el.textContent = msg; el.classList.add('show');
+  document.getElementById('authError').classList.remove('show');
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────
+async function handleLogin(e) {
+  e.preventDefault();
+  clearAuthMessages();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPass').value;
+  const btn = document.getElementById('loginBtn');
+  btn.textContent = 'SIGNING IN…'; btn.disabled = true;
+
+  try {
+    const data = await apiFetch('/auth/login', { method:'POST', body:{ email, password } });
+    localStorage.setItem('nexus_token', data.token);
+    localStorage.setItem('nexus_user', JSON.stringify(data.user));
+
+    if (data.user.role === 'admin') {
+      showPage('page-admin');
+      loadAdminData();
+    } else {
+      document.getElementById('userAvatar').textContent = data.user.name.charAt(0).toUpperCase();
+      document.getElementById('userNameDisplay').textContent = data.user.name;
+      showPage('page-user');
+      loadDashboard();
+      connectSocket();
+    }
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.disabled = false;
+    switchAuthTab(currentAuthTab); // restore button text
+  }
+}
+
+// ── REGISTER ──────────────────────────────────────────────────
+async function handleRegister(e) {
+  e.preventDefault();
+  clearAuthMessages();
+  const name     = document.getElementById('regName').value.trim();
+  const email    = document.getElementById('regEmail').value.trim();
+  const password = document.getElementById('regPass').value;
+  const confirm  = document.getElementById('regPass2').value;
+
+  if (password !== confirm) return showAuthError('Passwords do not match.');
+  if (password.length < 6)  return showAuthError('Password must be at least 6 characters.');
+
+  const btn = document.getElementById('registerBtn');
+  btn.textContent = 'CREATING ACCOUNT…'; btn.disabled = true;
+
+  try {
+    const data = await apiFetch('/auth/register', { method:'POST', body:{ name, email, password } });
+    localStorage.setItem('nexus_token', data.token);
+    localStorage.setItem('nexus_user', JSON.stringify(data.user));
+
+    showAuthSuccess('Account created! Redirecting to dashboard…');
+    setTimeout(() => {
+      document.getElementById('userAvatar').textContent = data.user.name.charAt(0).toUpperCase();
+      document.getElementById('userNameDisplay').textContent = data.user.name;
+      showPage('page-user');
+      loadDashboard();
+      connectSocket();
+    }, 1200);
+  } catch (err) {
+    showAuthError(err.message);
+  } finally {
+    btn.textContent = 'CREATE ACCOUNT'; btn.disabled = false;
+  }
+}
+
+// ── LOGOUT ────────────────────────────────────────────────────
+function logout() {
+  localStorage.removeItem('nexus_token');
+  localStorage.removeItem('nexus_user');
+  if (socket) { socket.disconnect(); socket = null; }
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+  showPage('page-landing');
+}
+
+// ── SOCKET.IO ─────────────────────────────────────────────────
+function connectSocket() {
+  if (socket) return;
+  socket = io('http://localhost:3001'); // ← change to your backend URL
+
+  socket.on('live-update', data => {
+    // Update traffic cells
+    if (data.traffic) updateTrafficCells(data.traffic);
+  });
+
+  socket.on('new-activity', entry => {
+    prependActivity(entry);
+  });
+
+  socket.on('incident-update', incident => {
+    if (incident.status !== 'open') removeDecisionCard(incident.id);
+  });
+}
+
+// ── LOAD DASHBOARD DATA ───────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const data = await apiFetch('/dashboard');
+    renderKPIs(data);
+    renderModules(data);
+    renderDecisions(data.incidents);
+    renderActivity(data.activity);
+
+    // Animate score
+    let v = 0;
+    const target = data.city_score;
+    const el = document.getElementById('scoreCounter');
+    const iv = setInterval(() => { v += 2; if (v >= target) { v = target; clearInterval(iv); } el.textContent = v; }, 25);
+    document.getElementById('scoreDelta').textContent = `↑ City Score: ${target}/100`;
+
+    // Update alert
+    const critWaste = data.waste.find(w => w.status === 'critical');
+    const critTraffic = data.traffic.find(t => t.status === 'high');
+    const msgs = [];
+    if (critTraffic) msgs.push(`Traffic incident: ${critTraffic.location}`);
+    if (critWaste) msgs.push(`Zone ${critWaste.zone} waste at ${critWaste.capacity}%`);
+    if (msgs.length) document.getElementById('alertMsg').textContent = msgs.join(' · ');
+    else document.getElementById('dashAlert').style.display = 'none';
+
+  } catch (err) {
+    toast('Failed to load dashboard: ' + err.message, 'err');
+  }
+}
+
+function renderKPIs(data) {
+  const s = data.summary;
+  document.getElementById('kpiRow').innerHTML = `
+    <div class="kpi t"><div class="kpi-lbl">AVG CONGESTION</div>
+      <div class="kpi-val">${s.avg_congestion}<span class="kpi-u">%</span></div>
+      <div class="kpi-trend ${s.avg_congestion > 65 ? 'dn' : 'up'}">${s.avg_congestion > 65 ? '↑ HIGH' : '↓ NORMAL'}</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:${s.avg_congestion}%"></div></div></div>
+    <div class="kpi w"><div class="kpi-lbl">AVG WASTE CAPACITY</div>
+      <div class="kpi-val">${s.avg_waste}<span class="kpi-u">%</span></div>
+      <div class="kpi-trend ${s.avg_waste > 75 ? 'dn' : 'nt'}">↔ ${s.avg_waste > 75 ? 'HIGH' : 'Normal'}</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:${s.avg_waste}%"></div></div></div>
+    <div class="kpi e"><div class="kpi-lbl">TOTAL ENERGY</div>
+      <div class="kpi-val">${s.total_energy_mw}<span class="kpi-u">MW</span></div>
+      <div class="kpi-trend nt">${s.renewable_pct}% renewable</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:${Math.min(100,s.total_energy_mw/50*100)}%"></div></div></div>
+    <div class="kpi a"><div class="kpi-lbl">OPEN INCIDENTS</div>
+      <div class="kpi-val">${data.incidents.length}<span class="kpi-u">open</span></div>
+      <div class="kpi-trend ${data.incidents.length > 2 ? 'dn' : 'up'}">${data.incidents.length > 0 ? 'Needs attention' : '↑ All clear'}</div>
+      <div class="kpi-bar"><div class="kpi-fill" style="width:${data.incidents.length * 20}%"></div></div></div>`;
+}
+
+function renderModules(data) {
+  const avgCong = data.traffic.reduce((s,r) => s+r.congestion,0)/(data.traffic.length||1);
+  const avgWaste = data.waste.reduce((s,r) => s+r.capacity,0)/(data.waste.length||1);
+  const totalMw = data.energy.reduce((s,r) => s+parseFloat(r.output_mw),0);
+
+  const tStatus = avgCong > 75 ? ['s-crit','CRITICAL'] : avgCong > 50 ? ['s-warn','MODERATE'] : ['s-ok','GOOD'];
+  const wStatus = avgWaste > 85 ? ['s-crit','CRITICAL'] : avgWaste > 60 ? ['s-warn','MODERATE'] : ['s-ok','GOOD'];
+  const eStatus = totalMw > 40 ? ['s-warn','HIGH LOAD'] : ['s-ok','NORMAL'];
+
+  // Build traffic map cells
+  const cellHtml = data.traffic.slice(0,20).map(s => {
+    const cls = s.status === 'high' ? 'th' : s.status === 'medium' ? 'tm' : 'tl';
+    return `<div class="traf-cell ${cls}" title="${s.location}: ${s.congestion}%"></div>`;
+  }).join('') + Array(Math.max(0,20-data.traffic.length)).fill('<div class="traf-cell tl"></div>').join('');
+
+  const routeHtml = data.traffic.slice(0,3).map(s => {
+    const color = s.congestion > 75 ? 'var(--c-red)' : s.congestion > 50 ? 'var(--c-amber)' : 'var(--c-cyan)';
+    return `<div class="route-row"><span style="font-size:11px;flex-shrink:0;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${s.location.split('&')[0]}</span>
+      <div class="route-fw"><div class="route-fill" style="width:${s.congestion}%;background:${color}"></div></div>
+      <span class="route-v">${s.congestion}%</span></div>`;
+  }).join('');
+
+  // Waste zones
+  const wasteHtml = data.waste.slice(0,4).map(w => `
+    <div class="wz"><div class="wz-name">${w.zone.toUpperCase()}</div>
+      <div class="bin-row">
+        <div class="bin bo" style="height:${Math.min(100,w.capacity*0.9)}%"></div>
+        <div class="bin br" style="height:${Math.min(100,w.capacity*0.7)}%"></div>
+        <div class="bin bg2" style="height:${Math.min(100,w.capacity)}%"></div>
+        <div class="bin bh" style="height:${Math.min(100,w.capacity*0.4)}%"></div>
+      </div>
+      <div class="wz-pct" style="${w.capacity>85?'color:var(--c-red)':''}">${w.capacity}%${w.capacity>85?' ⚠':''}</div>
+    </div>`).join('');
+
+  // Energy sources for donut labels
+  const totalE = data.energy.reduce((s,r) => s+parseFloat(r.output_mw),0);
+  const eColors = {solar:'#FFD700',wind:'#00e5ff',gas:'#ffab00',grid:'#9d6bff',hydro:'#39ff6a'};
+  const eSrcHtml = data.energy.map(e => {
+    const pct = totalE > 0 ? ((parseFloat(e.output_mw)/totalE)*100).toFixed(1) : 0;
+    return `<div class="e-src"><div class="e-dot" style="background:${eColors[e.type]||'#888'}"></div>
+      <div class="e-name">${e.name.split(' ')[0]}</div><div class="e-pct">${pct}%</div></div>`;
+  }).join('');
+
+  document.getElementById('modGrid').innerHTML = `
+    <div class="module">
+      <div class="mod-head">
+        <div class="mod-title"><div class="mod-dot" style="background:var(--c-cyan);box-shadow:0 0 5px var(--c-cyan)"></div>TRAFFIC</div>
+        <div class="mod-status ${tStatus[0]}">${tStatus[1]}</div>
+      </div>
+      <div class="mod-body">
+        <div class="traf-map">${cellHtml}</div>
+        <div class="traf-leg"><div class="leg-item"><div class="leg-sq" style="background:rgba(0,229,255,.5)"></div>LOW</div><div class="leg-item"><div class="leg-sq" style="background:rgba(255,171,0,.5)"></div>MED</div><div class="leg-item"><div class="leg-sq" style="background:rgba(255,61,113,.5)"></div>HIGH</div></div>
+        <div class="route-rows">${routeHtml}</div>
+      </div>
+    </div>
+    <div class="module">
+      <div class="mod-head">
+        <div class="mod-title"><div class="mod-dot" style="background:var(--c-green);box-shadow:0 0 5px var(--c-green)"></div>WASTE</div>
+        <div class="mod-status ${wStatus[0]}">${wStatus[1]}</div>
+      </div>
+      <div class="mod-body">
+        <div class="waste-zones">${wasteHtml}</div>
+        <div class="coll-rows">${data.waste.slice(0,3).map(w => `
+          <div class="coll-row"><span>${w.name}</span>
+          <div class="coll-tag ${w.status==='critical'?'tag-p':w.status==='good'?'tag-d':'tag-s'}">${w.status.toUpperCase()}</div></div>`).join('')}
+        </div>
+      </div>
+    </div>
+    <div class="module">
+      <div class="mod-head">
+        <div class="mod-title"><div class="mod-dot" style="background:var(--c-amber);box-shadow:0 0 5px var(--c-amber)"></div>ENERGY</div>
+        <div class="mod-status ${eStatus[0]}">${eStatus[1]}</div>
+      </div>
+      <div class="mod-body">
+        <div class="energy-top">
+          <svg width="96" height="96" viewBox="0 0 96 96">
+            ${buildDonutSVG(data.energy, totalE)}
+            <text x="48" y="44" text-anchor="middle" fill="#eef4ff" font-size="12" font-weight="900" font-family="Orbitron">${totalE.toFixed(1)}</text>
+            <text x="48" y="56" text-anchor="middle" fill="#4a6080" font-size="7" font-family="Space Mono">MW</text>
+          </svg>
+          <div class="e-sources">${eSrcHtml}</div>
+        </div>
+        <div class="spark-lbl">LOAD DISTRIBUTION</div>
+        <svg class="sparkline" viewBox="0 0 280 46" preserveAspectRatio="none">
+          <defs><linearGradient id="sg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffab00" stop-opacity=".3"/><stop offset="100%" stop-color="#ffab00" stop-opacity="0"/></linearGradient></defs>
+          <path d="M0,30 C30,28 55,34 80,26 C105,18 130,22 155,16 C180,10 205,24 230,20 C250,17 265,11 280,9" stroke="#ffab00" stroke-width="1.5" fill="none"/>
+          <path d="M0,30 C30,28 55,34 80,26 C105,18 130,22 155,16 C180,10 205,24 230,20 C250,17 265,11 280,9 L280,46 L0,46Z" fill="url(#sg)"/>
+          <circle cx="280" cy="9" r="3" fill="#ffab00"><animate attributeName="r" from="3" to="10" dur="1.5s" repeatCount="indefinite"/><animate attributeName="opacity" from=".5" to="0" dur="1.5s" repeatCount="indefinite"/></circle>
+        </svg>
+      </div>
+    </div>`;
+}
+
+function buildDonutSVG(sources, total) {
+  const colors = {solar:'#FFD700',wind:'#00e5ff',gas:'#ffab00',grid:'#9d6bff',hydro:'#39ff6a'};
+  const r = 34, cx = 48, cy = 48, circ = 2 * Math.PI * r;
+  let offset = 0;
+  const bg = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#141e35" stroke-width="13"/>`;
+  const arcs = sources.map(s => {
+    const pct = total > 0 ? parseFloat(s.output_mw) / total : 0;
+    const dash = pct * circ;
+    const arc = `<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${colors[s.type]||'#888'}" stroke-width="13"
+      stroke-dasharray="${dash.toFixed(2)} ${(circ-dash).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}" transform="rotate(-90 ${cx} ${cy})"/>`;
+    offset += dash;
+    return arc;
+  }).join('');
+  return bg + arcs;
+}
+
+function renderDecisions(incidents) {
+  const container = document.getElementById('decisionsContainer');
+  document.getElementById('decisionCount').textContent = incidents.length + ' OPEN';
+  if (!incidents.length) { container.innerHTML = '<div style="text-align:center;color:var(--text-dim);font-family:var(--font-m);font-size:11px;padding:20px">✓ No open decisions</div>'; return; }
+  container.innerHTML = incidents.map(inc => `
+    <div class="decision-card d-${inc.priority}" id="decision-${inc.id}">
+      <div class="d-top"><div class="d-title">${inc.title}</div><div class="d-badge b-${inc.priority}">${inc.priority.toUpperCase()}</div></div>
+      <div class="d-desc">${inc.description || ''}</div>
+      <div class="d-actions">
+        <button class="d-btn d-approve" onclick="approveDecision(${inc.id}, this)">APPROVE</button>
+        <button class="d-btn d-defer" onclick="deferDecision(${inc.id}, this)">DEFER</button>
+      </div>
+    </div>`).join('');
+}
+
+function renderActivity(activity) {
+  const feed = document.getElementById('activityFeed');
+  const iconCls = {traffic:'ai-t',waste:'ai-w',energy:'ai-e',system:'ai-s'};
+  feed.innerHTML = activity.map(a => `
+    <div class="act-item">
+      <div class="act-icon ${iconCls[a.module]||'ai-s'}">${a.icon||'📡'}</div>
+      <div><div class="act-msg">${a.message}</div>
+      <div class="act-time">${timeAgo(a.created_at)}</div></div>
+    </div>`).join('');
+}
+
+function prependActivity(entry) {
+  const feed = document.getElementById('activityFeed');
+  if (!feed) return;
+  const iconCls = {traffic:'ai-t',waste:'ai-w',energy:'ai-e',system:'ai-s'};
+  const item = document.createElement('div');
+  item.className = 'act-item';
+  item.innerHTML = `<div class="act-icon ${iconCls[entry.module]||'ai-s'}">${entry.icon||'📡'}</div>
+    <div><div class="act-msg">${entry.message}</div><div class="act-time">Just now</div></div>`;
+  feed.prepend(item);
+}
+
+function updateTrafficCells(trafficData) {
+  const cells = document.querySelectorAll('.traf-cell');
+  trafficData.forEach((s, i) => {
+    if (cells[i]) {
+      cells[i].className = 'traf-cell ' + (s.status === 'high' ? 'th' : s.status === 'medium' ? 'tm' : 'tl');
+    }
+  });
+}
+
+async function approveDecision(id, btn) {
+  try {
+    await apiFetch(`/incidents/${id}`, { method:'PUT', body:{ status:'approved' } });
+    removeDecisionCard(id);
+    toast('Decision approved and logged.', 'ok');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+async function deferDecision(id, btn) {
+  try {
+    await apiFetch(`/incidents/${id}`, { method:'PUT', body:{ status:'deferred' } });
+    removeDecisionCard(id);
+    toast('Decision deferred.', 'info');
+  } catch (e) { toast(e.message, 'err'); }
+}
+
+function removeDecisionCard(id) {
+  const card = document.getElementById('decision-' + id);
+  if (!card) return;
+  card.style.transition = 'all .35s'; card.style.opacity = '0'; card.style.transform = 'translateX(18px)';
+  setTimeout(() => {
+    card.remove();
+    const remaining = document.querySelectorAll('.decision-card').length;
+    document.getElementById('decisionCount').textContent = remaining + ' OPEN';
+  }, 350);
+}
+
+// ── DASHBOARD SECTIONS ────────────────────────────────────────
+function showDashSection(name) {
+  const sections = ['overview','analytics','traffic','waste','energy'];
+  sections.forEach(s => {
+    const el = document.getElementById('sec-' + s);
+    if (el) el.style.display = s === name ? 'block' : 'none';
+  });
+  document.querySelectorAll('.sb-item').forEach((el,i) => {
+    el.classList.toggle('active', i === sections.indexOf(name) + 1);
+  });
+  if (name === 'analytics') loadAnalyticsCharts();
+  if (name === 'traffic')   loadTrafficDetail();
+  if (name === 'waste')     loadWasteDetail();
+  if (name === 'energy')    loadEnergyDetail();
+}
+
+// ── ANALYTICS CHARTS ──────────────────────────────────────────
+const CHART_DEFAULTS = {
+  responsive: true, maintainAspectRatio: false,
+  plugins: { legend: { labels: { color: '#b8ccee', font: { family: 'Space Mono', size: 10 } } } },
+  scales: {
+    x: { ticks: { color: '#4a6080', font: { family: 'Space Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+    y: { ticks: { color: '#4a6080', font: { family: 'Space Mono', size: 9 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+  }
+};
+
+async function loadAnalyticsCharts() {
+  try {
+    const [tData, wData, eData] = await Promise.all([
+      apiFetch('/traffic/analytics'),
+      apiFetch('/waste/analytics'),
+      apiFetch('/energy/analytics')
+    ]);
+
+    destroyChart('chartTrafficTrend');
+    destroyChart('chartEnergyTrend');
+    destroyChart('chartWasteZones');
+    destroyChart('chartEnergyDonut');
+    destroyChart('chartTrafficSectors');
+
+    // Traffic trend
+    const tTrend = tData.trend.length ? tData.trend : generateMockTrend(24, 40, 80);
+    charts.trafficTrend = new Chart(document.getElementById('chartTrafficTrend'), {
+      type:'line',
+      data:{ labels: tTrend.map(d => fmtHour(d.hour)),
+        datasets:[{ label:'Avg Congestion %', data: tTrend.map(d => d.avg_congestion),
+          borderColor:'#00e5ff', backgroundColor:'rgba(0,229,255,0.08)', tension:.4, pointRadius:2 }] },
+      options:{ ...CHART_DEFAULTS, plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:false } } }
+    });
+
+    // Energy trend
+    const eTrend = eData.trend.length ? eData.trend : generateMockTrend(24, 32, 42);
+    charts.energyTrend = new Chart(document.getElementById('chartEnergyTrend'), {
+      type:'line',
+      data:{ labels: eTrend.map(d => fmtHour(d.hour)),
+        datasets:[{ label:'Total MW', data: eTrend.map(d => d.total_mw||d.avg_congestion),
+          borderColor:'#ffab00', backgroundColor:'rgba(255,171,0,0.08)', tension:.4, pointRadius:2 }] },
+      options:{ ...CHART_DEFAULTS, plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:false } } }
+    });
+
+    // Waste by zone
+    const zones = wData.by_zone || [];
+    charts.wasteZones = new Chart(document.getElementById('chartWasteZones'), {
+      type:'bar',
+      data:{ labels: zones.map(z => z.zone.split('·')[0].trim()),
+        datasets:[{ label:'Capacity %', data: zones.map(z => z.capacity),
+          backgroundColor: zones.map(z => z.capacity>85?'rgba(255,61,113,0.6)':z.capacity>60?'rgba(255,171,0,0.6)':'rgba(57,255,106,0.6)'),
+          borderColor: zones.map(z => z.capacity>85?'#ff3d71':z.capacity>60?'#ffab00':'#39ff6a'), borderWidth:1, borderRadius:3 }] },
+      options:{ ...CHART_DEFAULTS, plugins:{ ...CHART_DEFAULTS.plugins, legend:{ display:false } } }
+    });
+
+    // Energy donut
+    const eTypes = eData.by_type || [];
+    const eColors2 = { solar:'#FFD700', wind:'#00e5ff', gas:'#ffab00', grid:'#9d6bff', hydro:'#39ff6a' };
+    charts.energyDonut = new Chart(document.getElementById('chartEnergyDonut'), {
+      type:'doughnut',
+      data:{ labels: eTypes.map(e => e.type.toUpperCase()),
+        datasets:[{ data: eTypes.map(e => parseFloat(e.total_mw)),
+          backgroundColor: eTypes.map(e => eColors2[e.type]||'#888'),
+          borderColor:'#0b1120', borderWidth:3 }] },
+      options:{ ...CHART_DEFAULTS, cutout:'65%',
+        plugins:{ legend:{ position:'bottom', labels:{ color:'#b8ccee', font:{family:'Space Mono',size:9} } } },
+        scales:{ x:{ display:false }, y:{ display:false } } }
+    });
+
+    // Traffic by sector
+    const sectors = tData.by_sector || [];
+    charts.trafficSectors = new Chart(document.getElementById('chartTrafficSectors'), {
+      type:'bar',
+      data:{ labels: sectors.map(s => 'SECTOR ' + s.sector),
+        datasets:[
+          { label:'Avg Congestion %', data: sectors.map(s => s.avg_congestion), backgroundColor:'rgba(0,229,255,0.5)', borderColor:'#00e5ff', borderWidth:1, borderRadius:3 },
+          { label:'Avg Speed (kph)',  data: sectors.map(s => s.avg_speed), backgroundColor:'rgba(57,255,106,0.4)', borderColor:'#39ff6a', borderWidth:1, borderRadius:3 }
+        ] },
+      options:{ ...CHART_DEFAULTS }
+    });
+
+  } catch (err) {
+    toast('Failed to load analytics: ' + err.message, 'err');
+  }
+}
+
+function destroyChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function generateMockTrend(n, min, max) {
+  return Array.from({length:n}, (_,i) => ({
+    hour: new Date(Date.now() - (n-i)*3600000).toISOString(),
+    avg_congestion: (min + Math.random()*(max-min)).toFixed(1)
+  }));
+}
+
+function fmtHour(ts) {
+  if (!ts) return '';
+  try { return new Date(ts).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'}); }
+  catch { return ts; }
+}
+
+// ── DETAIL TABLES (resident) ──────────────────────────────────
+async function loadTrafficDetail() {
+  try {
+    const data = await apiFetch('/traffic');
+    document.getElementById('trafficDetailTable').innerHTML = data.map(s => `
+      <tr><td>#${s.sensor_code}</td><td>${s.location}</td><td>${s.sector}</td>
+      <td class="${s.congestion>75?'text-red':s.congestion>50?'text-amber':'text-cyan'}">${s.congestion}%</td>
+      <td>${s.avg_speed} kph</td>
+      <td><span class="td-badge" style="background:${s.status==='high'?'rgba(255,61,113,.1)':s.status==='medium'?'rgba(255,171,0,.1)':'rgba(57,255,106,.1)'};color:${s.status==='high'?'var(--c-red)':s.status==='medium'?'var(--c-amber)':'var(--c-green)'}">${s.status.toUpperCase()}</span></td>
+      <td class="text-dim">${timeAgo(s.updated_at)}</td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadWasteDetail() {
+  try {
+    const data = await apiFetch('/waste');
+    document.getElementById('wasteDetailTable').innerHTML = data.map(w => `
+      <tr><td>${w.zone}</td><td>${w.name}</td>
+      <td class="${w.capacity>85?'text-red':w.capacity>60?'text-amber':'text-cyan'}">${w.capacity}%</td>
+      <td class="text-dim">${w.last_pickup ? timeAgo(w.last_pickup) : '—'}</td>
+      <td class="text-dim">${w.next_pickup ? new Date(w.next_pickup).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '—'}</td>
+      <td><span class="td-badge" style="background:${w.status==='critical'?'rgba(255,61,113,.1)':w.status==='moderate'?'rgba(255,171,0,.1)':'rgba(57,255,106,.1)'};color:${w.status==='critical'?'var(--c-red)':w.status==='moderate'?'var(--c-amber)':'var(--c-green)'}">${w.status.toUpperCase()}</span></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadEnergyDetail() {
+  try {
+    const data = await apiFetch('/energy');
+    document.getElementById('energyDetailTable').innerHTML = data.map(e => `
+      <tr><td>${e.name}</td>
+      <td style="text-transform:capitalize">${e.type}</td>
+      <td class="text-amber">${e.output_mw} MW</td>
+      <td>${e.capacity_pct}%</td>
+      <td class="text-dim">$${e.cost_per_mwh}/MWh</td>
+      <td><span class="td-badge" style="background:${e.status==='online'?'rgba(57,255,106,.1)':'rgba(255,171,0,.1)'};color:${e.status==='online'?'var(--c-green)':'var(--c-amber)'}">${e.status.toUpperCase()}</span></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+// ── ADMIN DATA ────────────────────────────────────────────────
+async function loadAdminData() {
+  loadAdminOverview();
+  loadAdminTraffic();
+  loadAdminWaste();
+  loadAdminEnergy();
+  loadAdminUsers();
+}
+
+async function loadAdminOverview() {
+  try {
+    const data = await apiFetch('/dashboard');
+    document.getElementById('adminStats').innerHTML = `
+      <div class="admin-stat"><div class="admin-stat-val text-cyan">${data.traffic.length + data.waste.length + data.energy.length}</div><div class="admin-stat-lbl">TOTAL RECORDS</div><div class="admin-stat-ch text-green">↑ live</div></div>
+      <div class="admin-stat"><div class="admin-stat-val text-green">${data.city_score}</div><div class="admin-stat-lbl">CITY SCORE</div><div class="admin-stat-ch text-green">/ 100</div></div>
+      <div class="admin-stat"><div class="admin-stat-val text-amber">${data.incidents.length}</div><div class="admin-stat-lbl">OPEN INCIDENTS</div><div class="admin-stat-ch text-${data.incidents.length>3?'red':'green'}">${data.incidents.length > 3 ? '↑ attention' : '↓ normal'}</div></div>
+      <div class="admin-stat"><div class="admin-stat-val text-cyan">${data.summary.renewable_pct}%</div><div class="admin-stat-lbl">RENEWABLE ENERGY</div><div class="admin-stat-ch text-green">↑ target 60%</div></div>`;
+
+    document.getElementById('adminHealthTable').innerHTML = `
+      <tr><td>🚗 Traffic Management</td>
+        <td><span class="td-badge" style="background:rgba(255,171,0,.1);color:var(--c-amber)">${data.summary.avg_congestion > 65 ? 'MODERATE' : 'NORMAL'}</span></td>
+        <td>${data.traffic.length} sensors</td>
+        <td class="${data.traffic.filter(t=>t.status==='high').length>0?'text-red':'text-green'}">${data.traffic.filter(t=>t.status==='high').length} high congestion</td>
+        <td class="text-dim">Live</td></tr>
+      <tr><td>♻️ Waste Management</td>
+        <td><span class="td-badge" style="background:${data.waste.some(w=>w.status==='critical')?'rgba(255,61,113,.1)':'rgba(57,255,106,.1)'};color:${data.waste.some(w=>w.status==='critical')?'var(--c-red)':'var(--c-green)'}">${data.waste.some(w=>w.status==='critical')?'CRITICAL':'NORMAL'}</span></td>
+        <td>${data.waste.length} facilities</td>
+        <td class="${data.waste.filter(w=>w.status==='critical').length>0?'text-red':'text-green'}">${data.waste.filter(w=>w.status==='critical').length} critical zones</td>
+        <td class="text-dim">Live</td></tr>
+      <tr><td>⚡ Energy Management</td>
+        <td><span class="td-badge" style="background:rgba(57,255,106,.1);color:var(--c-green)">ONLINE</span></td>
+        <td>${data.energy.length} sources</td>
+        <td class="text-green">${data.summary.total_energy_mw} MW total</td>
+        <td class="text-dim">Live</td></tr>`;
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadAdminTraffic() {
+  try {
+    const data = await apiFetch('/traffic');
+    document.getElementById('adminTrafficTable').innerHTML = data.map(s => `
+      <tr><td class="text-dim">${s.id}</td><td class="text-cyan">#${s.sensor_code}</td><td>${s.location}</td><td>${s.sector}</td>
+      <td class="${s.congestion>75?'text-red':s.congestion>50?'text-amber':'text-cyan'}">${s.congestion}%</td>
+      <td>${s.avg_speed}</td>
+      <td><span class="td-badge" style="background:${s.status==='high'?'rgba(255,61,113,.1)':s.status==='medium'?'rgba(255,171,0,.1)':'rgba(57,255,106,.1)'};color:${s.status==='high'?'var(--c-red)':s.status==='medium'?'var(--c-amber)':'var(--c-green)'}">${s.status.toUpperCase()}</span></td>
+      <td><div class="td-acts"><button class="td-btn td-edit" onclick='openModal("traffic",${JSON.stringify(s)})'>EDIT</button><button class="td-btn td-del" onclick="deleteRecord('traffic',${s.id},this)">DEL</button></div></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadAdminWaste() {
+  try {
+    const data = await apiFetch('/waste');
+    document.getElementById('adminWasteTable').innerHTML = data.map(w => `
+      <tr><td class="text-dim">${w.id}</td><td class="text-green">#${w.facility_code}</td><td>${w.zone}</td><td>${w.name}</td>
+      <td class="${w.capacity>85?'text-red':w.capacity>60?'text-amber':'text-cyan'}">${w.capacity}%</td>
+      <td><span class="td-badge" style="background:${w.status==='critical'?'rgba(255,61,113,.1)':w.status==='moderate'?'rgba(255,171,0,.1)':'rgba(57,255,106,.1)'};color:${w.status==='critical'?'var(--c-red)':w.status==='moderate'?'var(--c-amber)':'var(--c-green)'}">${w.status.toUpperCase()}</span></td>
+      <td class="text-dim">${w.next_pickup ? new Date(w.next_pickup).toLocaleString() : '—'}</td>
+      <td><div class="td-acts"><button class="td-btn td-edit" onclick='openModal("waste",${JSON.stringify(w)})'>EDIT</button><button class="td-btn td-del" onclick="deleteRecord('waste',${w.id},this)">DEL</button></div></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadAdminEnergy() {
+  try {
+    const data = await apiFetch('/energy');
+    document.getElementById('adminEnergyTable').innerHTML = data.map(e => `
+      <tr><td class="text-dim">${e.id}</td><td class="text-amber">#${e.source_code}</td><td>${e.name}</td>
+      <td style="text-transform:capitalize">${e.type}</td>
+      <td class="text-amber">${e.output_mw}</td><td>${e.capacity_pct}%</td>
+      <td class="text-dim">$${e.cost_per_mwh}</td>
+      <td><span class="td-badge" style="background:${e.status==='online'?'rgba(57,255,106,.1)':'rgba(255,171,0,.1)'};color:${e.status==='online'?'var(--c-green)':'var(--c-amber)'}">${e.status.toUpperCase()}</span></td>
+      <td><div class="td-acts"><button class="td-btn td-edit" onclick='openModal("energy",${JSON.stringify(e)})'>EDIT</button><button class="td-btn td-del" onclick="deleteRecord('energy',${e.id},this)">DEL</button></div></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+async function loadAdminUsers() {
+  try {
+    const data = await apiFetch('/auth/users');
+    document.getElementById('adminUsersTable').innerHTML = data.map(u => `
+      <tr><td class="text-dim">${u.id}</td><td>${u.name}</td><td>${u.email}</td>
+      <td><span class="u-role ${u.role==='admin'?'r-admin':'r-resident'}">${u.role.toUpperCase()}</span></td>
+      <td class="text-dim">${fmtDate(u.created_at)}</td>
+      <td class="text-dim">${u.last_active ? timeAgo(u.last_active) : '—'}</td>
+      <td><div class="td-acts"><button class="td-btn td-edit" onclick='openModal("user",${JSON.stringify(u)})'>EDIT</button><button class="td-btn td-del" onclick="deleteRecord('user',${u.id},this)">DEL</button></div></td></tr>`).join('');
+  } catch (e) { toast(e.message,'err'); }
+}
+
+function switchAdminTab(name) {
+  const tabs = ['overview','traffic','waste','energy','users','config'];
+  document.querySelectorAll('.admin-tab').forEach((t,i) => t.classList.toggle('active', tabs[i] === name));
+  document.querySelectorAll('.admin-section').forEach(s => s.classList.toggle('active', s.id === 'asec-' + name));
+  if (name === 'traffic') loadAdminTraffic();
+  if (name === 'waste')   loadAdminWaste();
+  if (name === 'energy')  loadAdminEnergy();
+  if (name === 'users')   loadAdminUsers();
+}
+
+// ── MODAL ────────────────────────────────────────────────────
+const MODAL_FORMS = {
+  traffic: (d={}) => `<div class="form-grid-2">
+    <div class="form-group"><label class="form-label">SENSOR CODE</label><input class="form-input" id="mf-code" value="${d.sensor_code||''}" placeholder="T-XXX"></div>
+    <div class="form-group"><label class="form-label">SECTOR</label><input class="form-input" id="mf-sector" value="${d.sector||''}" placeholder="B2"></div>
+    <div class="form-group span-2"><label class="form-label">LOCATION</label><input class="form-input" id="mf-location" value="${d.location||''}" placeholder="Street & intersection"></div>
+    <div class="form-group"><label class="form-label">CONGESTION %</label><input class="form-input" type="number" id="mf-congestion" value="${d.congestion||0}" min="0" max="100"></div>
+    <div class="form-group"><label class="form-label">AVG SPEED (KPH)</label><input class="form-input" type="number" id="mf-speed" value="${d.avg_speed||0}" min="0"></div>
+  </div>`,
+
+  waste: (d={}) => `<div class="form-grid-2">
+    <div class="form-group"><label class="form-label">FACILITY CODE</label><input class="form-input" id="mf-code" value="${d.facility_code||''}" placeholder="W-XXX"></div>
+    <div class="form-group"><label class="form-label">ZONE</label><select class="form-input" id="mf-zone">
+      ${['Zone 1 · North','Zone 2 · East','Zone 3 · South','Zone 4 · West'].map(z=>`<option ${d.zone===z?'selected':''}>${z}</option>`).join('')}
+    </select></div>
+    <div class="form-group span-2"><label class="form-label">FACILITY NAME</label><input class="form-input" id="mf-name" value="${d.name||''}" placeholder="e.g. North Main Depot"></div>
+    <div class="form-group"><label class="form-label">CAPACITY %</label><input class="form-input" type="number" id="mf-capacity" value="${d.capacity||0}" min="0" max="100"></div>
+    <div class="form-group"><label class="form-label">NEXT PICKUP</label><input class="form-input" type="datetime-local" id="mf-pickup" value="${d.next_pickup ? new Date(d.next_pickup).toISOString().slice(0,16) : ''}"></div>
+  </div>`,
+
+  energy: (d={}) => `<div class="form-grid-2">
+    <div class="form-group"><label class="form-label">SOURCE CODE</label><input class="form-input" id="mf-code" value="${d.source_code||''}" placeholder="E-XXX"></div>
+    <div class="form-group"><label class="form-label">TYPE</label><select class="form-input" id="mf-type">
+      ${['solar','wind','gas','grid','hydro','nuclear','battery'].map(t=>`<option ${d.type===t?'selected':''}>${t}</option>`).join('')}
+    </select></div>
+    <div class="form-group span-2"><label class="form-label">SOURCE NAME</label><input class="form-input" id="mf-name" value="${d.name||''}" placeholder="e.g. SolarGrid North"></div>
+    <div class="form-group"><label class="form-label">OUTPUT (MW)</label><input class="form-input" type="number" step="0.1" id="mf-output" value="${d.output_mw||0}"></div>
+    <div class="form-group"><label class="form-label">CAPACITY %</label><input class="form-input" type="number" id="mf-capacity" value="${d.capacity_pct||0}" min="0" max="100"></div>
+    <div class="form-group"><label class="form-label">COST / MWH ($)</label><input class="form-input" type="number" id="mf-cost" value="${d.cost_per_mwh||0}"></div>
+    <div class="form-group"><label class="form-label">STATUS</label><select class="form-input" id="mf-status">
+      ${['online','partial','offline'].map(s=>`<option ${d.status===s?'selected':''}>${s}</option>`).join('')}
+    </select></div>
+  </div>`,
+
+  user: (d={}) => `<div class="form-grid-2">
+    <div class="form-group span-2"><label class="form-label">FULL NAME</label><input class="form-input" id="mf-name" value="${d.name||''}" placeholder="Full name"></div>
+    <div class="form-group span-2"><label class="form-label">EMAIL</label><input class="form-input" type="email" id="mf-email" value="${d.email||''}" placeholder="user@nexus.city"></div>
+    <div class="form-group"><label class="form-label">ROLE</label><select class="form-input" id="mf-role">
+      <option ${d.role==='resident'?'selected':''}>resident</option>
+      <option ${d.role==='admin'?'selected':''}>admin</option>
+    </select></div>
+    <div class="form-group"><label class="form-label">NEW PASSWORD</label><input class="form-input" type="password" id="mf-pass" placeholder="Leave blank to keep"></div>
+  </div>`
+};
+
+function openModal(type, data = {}) {
+  currentModalType = type;
+  currentEditId = data.id || null;
+  const titles = { traffic:'TRAFFIC SENSOR', waste:'WASTE FACILITY', energy:'ENERGY SOURCE', user:'USER RECORD' };
+  document.getElementById('modalTitle').textContent = (currentEditId ? 'EDIT ' : 'ADD ') + titles[type];
+  document.getElementById('modalBody').innerHTML = MODAL_FORMS[type](data);
+  document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+
+async function saveModal() {
+  const type = currentModalType;
+  const id = currentEditId;
+  let body = {};
+
+  try {
+    if (type === 'traffic') {
+      body = {
+        sensor_code: document.getElementById('mf-code')?.value,
+        location: document.getElementById('mf-location')?.value,
+        sector: document.getElementById('mf-sector')?.value,
+        congestion: document.getElementById('mf-congestion')?.value,
+        avg_speed: document.getElementById('mf-speed')?.value
+      };
+    } else if (type === 'waste') {
+      body = {
+        facility_code: document.getElementById('mf-code')?.value,
+        zone: document.getElementById('mf-zone')?.value,
+        name: document.getElementById('mf-name')?.value,
+        capacity: document.getElementById('mf-capacity')?.value,
+        next_pickup: document.getElementById('mf-pickup')?.value
+      };
+    } else if (type === 'energy') {
+      body = {
+        source_code: document.getElementById('mf-code')?.value,
+        name: document.getElementById('mf-name')?.value,
+        type: document.getElementById('mf-type')?.value,
+        output_mw: document.getElementById('mf-output')?.value,
+        capacity_pct: document.getElementById('mf-capacity')?.value,
+        cost_per_mwh: document.getElementById('mf-cost')?.value,
+        status: document.getElementById('mf-status')?.value
+      };
+    } else if (type === 'user') {
+      body = {
+        name: document.getElementById('mf-name')?.value,
+        email: document.getElementById('mf-email')?.value,
+        role: document.getElementById('mf-role')?.value,
+        password: document.getElementById('mf-pass')?.value || undefined
+      };
+    }
+
+    const pathMap = { traffic:'/traffic', waste:'/waste', energy:'/energy', user:'/auth/users' };
+    const path = pathMap[type] + (id ? `/${id}` : '');
+    const method = id ? 'PUT' : 'POST';
+
+    await apiFetch(path, { method, body });
+    closeModal();
+    toast('Record saved successfully.', 'ok');
+
+    // Reload the relevant table
+    if (type === 'traffic') loadAdminTraffic();
+    if (type === 'waste')   loadAdminWaste();
+    if (type === 'energy')  loadAdminEnergy();
+    if (type === 'user')    loadAdminUsers();
+
+  } catch (err) {
+    toast('Save failed: ' + err.message, 'err');
+  }
+}
+
+async function deleteRecord(type, id, btn) {
+  if (!confirm('Delete this record? This cannot be undone.')) return;
+  const pathMap = { traffic:'/traffic', waste:'/waste', energy:'/energy', user:'/auth/users' };
+  try {
+    await apiFetch(pathMap[type] + '/' + id, { method:'DELETE' });
+    const row = btn.closest('tr');
+    row.style.transition = 'opacity .3s'; row.style.opacity = '0';
+    setTimeout(() => row.remove(), 300);
+    toast('Record deleted.', 'ok');
+  } catch (err) {
+    toast('Delete failed: ' + err.message, 'err');
+  }
+}
+
+function exportCSV(section) {
+  toast(`CSV export initiated for ${section.toUpperCase()}…`, 'info');
+  // In production: fetch the data and generate a real CSV download
+}
+
+function saveConfig() {
+  toast('Configuration saved.', 'ok');
+}
+
+// ── UTILITY ──────────────────────────────────────────────────
+function timeAgo(ts) {
+  if (!ts) return '—';
+  const diff = (Date.now() - new Date(ts)) / 1000;
+  if (diff < 60)   return 'Just now';
+  if (diff < 3600) return Math.floor(diff/60) + ' min ago';
+  if (diff < 86400) return Math.floor(diff/3600) + ' hrs ago';
+  return Math.floor(diff/86400) + ' days ago';
+}
+function fmtDate(ts) {
+  if (!ts) return '—';
+  return new Date(ts).toLocaleDateString('en-GB', {day:'2-digit',month:'short',year:'numeric'});
+}
+
+// ── MODAL BACKDROP ────────────────────────────────────────────
+document.getElementById('modalOverlay').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ── CHECK SESSION ON LOAD ─────────────────────────────────────
+(function checkSession() {
+  const user = getUser();
+  const token = getToken();
+  if (!user || !token) return;
+  // Optionally auto-restore session here
+})();
+</script>
+</body>
+</html>
