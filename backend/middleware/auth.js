@@ -1,30 +1,27 @@
-// ─────────────────────────────────────────────
-// middleware/auth.js — JWT authentication guard
-// ─────────────────────────────────────────────
-// Attach this to any route that requires a logged-in user.
-// It reads the token from the Authorization header, verifies it,
-// and attaches the decoded user payload to req.user.
-// ─────────────────────────────────────────────
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-module.exports = function authMiddleware(req, res, next) {
-  // Token should come in: Authorization: Bearer <token>
-  const authHeader = req.headers['authorization'];
-
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Access denied. No token provided.' });
-  }
-
-  const token = authHeader.split(' ')[1];
-
+const auth = async (req, res, next) => {
   try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+    if (!token) return res.status(401).json({ message: 'No token provided' });
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // { id, role, iat, exp }
+    const user = await User.findById(decoded.id).select('-password');
+    if (!user) return res.status(401).json({ message: 'Invalid token' });
+
+    req.user = user;
     next();
   } catch (err) {
-    if (err.name === 'TokenExpiredError') {
-      return res.status(401).json({ error: 'Token expired. Please log in again.' });
-    }
-    return res.status(401).json({ error: 'Invalid token.' });
+    res.status(401).json({ message: 'Authentication failed' });
   }
 };
+
+const adminOnly = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  next();
+};
+
+module.exports = { auth, adminOnly };

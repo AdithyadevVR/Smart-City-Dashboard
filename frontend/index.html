@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartCity — Login</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <style>
+    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; overflow: hidden; }
+
+    /* Animated background blobs */
+    .bg-blobs { position: fixed; inset: 0; overflow: hidden; z-index: 0; }
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.35;
+      animation: float 12s ease-in-out infinite;
+    }
+    .blob-1 { width: 600px; height: 600px; background: radial-gradient(circle, #3b82f6, #1a56db); top: -200px; left: -100px; animation-delay: 0s; }
+    .blob-2 { width: 500px; height: 500px; background: radial-gradient(circle, #059669, #10b981); bottom: -150px; right: -100px; animation-delay: -4s; }
+    .blob-3 { width: 400px; height: 400px; background: radial-gradient(circle, #7c3aed, #a78bfa); top: 50%; left: 60%; animation-delay: -8s; }
+    [data-theme="dark"] .blob { opacity: 0.2; }
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -40px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.97); }
+    }
+
+    /* Grid overlay */
+    .grid-overlay {
+      position: fixed;
+      inset: 0;
+      background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+      background-size: 60px 60px;
+      z-index: 0;
+    }
+
+    /* Login card */
+    .login-wrap { position: relative; z-index: 1; width: 100%; max-width: 440px; padding: 16px; }
+    .login-card {
+      background: var(--bg-elevated);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      box-shadow: var(--shadow-lg);
+      padding: 44px 40px;
+      animation: fadeIn 0.5s ease;
+    }
+
+    .login-logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+    .login-logo-icon {
+      width: 48px; height: 48px;
+      background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: 0 8px 24px rgba(26,86,219,0.35);
+    }
+    .login-logo-text h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1;
+    }
+    .login-logo-text p { font-size: 0.78rem; color: var(--text-tertiary); margin-top: 2px; }
+
+    .login-heading { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 6px; }
+    .login-sub { color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 28px; }
+
+    .login-btn {
+      width: 100%;
+      justify-content: center;
+      padding: 13px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--primary) 0%, #3b82f6 100%);
+      box-shadow: 0 4px 16px rgba(26,86,219,0.3);
+    }
+    .login-btn:hover { box-shadow: 0 6px 24px rgba(26,86,219,0.4); transform: translateY(-1px); }
+    .login-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    .input-wrap { position: relative; }
+    .input-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-size: 1rem; pointer-events: none; }
+    .input-wrap .form-input { padding-left: 42px; }
+    .input-wrap .form-input:focus + .input-focus-ring {}
+
+    .divider-or {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--text-tertiary);
+      font-size: 0.8rem;
+      margin: 20px 0;
+    }
+    .divider-or::before, .divider-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .demo-creds {
+      background: var(--primary-soft);
+      border: 1px solid rgba(26,86,219,0.15);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      font-size: 0.82rem;
+    }
+    .demo-creds strong { color: var(--primary); }
+    .demo-row { display: flex; justify-content: space-between; margin-top: 4px; color: var(--text-secondary); }
+    .demo-fill {
+      background: none;
+      border: none;
+      color: var(--primary);
+      font-size: 0.78rem;
+      cursor: pointer;
+      font-weight: 600;
+      padding: 0;
+      font-family: inherit;
+      text-decoration: underline;
+    }
+    .demo-fill:hover { color: #1548c0; }
+
+    .error-msg {
+      background: var(--danger-soft);
+      border: 1px solid rgba(220,38,38,0.2);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      color: var(--danger);
+      margin-bottom: 16px;
+      display: none;
+    }
+    .error-msg.show { display: block; animation: fadeIn 0.3s ease; }
+
+    .login-footer { margin-top: 28px; text-align: center; font-size: 0.78rem; color: var(--text-tertiary); }
+
+    /* Theme toggle on login */
+    .login-theme-toggle {
+      position: fixed;
+      top: 16px;
+      right: 16px;
+      z-index: 10;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+  <div class="grid-overlay"></div>
+
+  <div class="login-theme-toggle">
+    <button class="theme-toggle" id="loginThemeToggle" title="Toggle theme">🌙</button>
+  </div>
+
+  <div class="login-wrap">
+    <div class="login-card">
+      <div class="login-logo">
+        <div class="login-logo-icon">🏙️</div>
+        <div class="login-logo-text">
+          <h1>SmartCity</h1>
+          <p>Decision Dashboard</p>
+        </div>
+      </div>
+
+      <h2 class="login-heading">Welcome back</h2>
+      <p class="login-sub">Sign in to access the city management system.</p>
+
+      <div class="error-msg" id="loginError">Invalid email or password. Please try again.</div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="email">Email address</label>
+          <div class="input-wrap">
+            <span class="input-icon">✉️</span>
+            <input class="form-input" type="email" id="email" placeholder="you@smartcity.com" required autocomplete="email" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">Password</label>
+          <div class="input-wrap">
+            <span class="input-icon">🔒</span>
+            <input class="form-input" type="password" id="password" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary login-btn" id="loginBtn">
+          Sign in →
+        </button>
+      </form>
+
+      <div class="divider-or">Demo credentials</div>
+
+      <div class="demo-creds">
+        <strong>Quick access:</strong>
+        <div class="demo-row">
+          <span>Admin: admin@smartcity.com / admin123</span>
+          <button class="demo-fill" onclick="fillAdmin()">Fill</button>
+        </div>
+        <div class="demo-row">
+          <span>User: user@smartcity.com / user123</span>
+          <button class="demo-fill" onclick="fillUser()">Fill</button>
+        </div>
+      </div>
+
+      <div class="login-footer">
+        SmartCity Management Platform v2.0 · Secured connection
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script>
+    const API = window.location.origin;
+
+    // Theme
+    const savedTheme = localStorage.getItem('sc-theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    document.getElementById('loginThemeToggle').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    document.getElementById('loginThemeToggle').addEventListener('click', () => {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('sc-theme', next);
+      document.getElementById('loginThemeToggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    });
+
+    // Check if already logged in
+    if (localStorage.getItem('sc-token')) {
+      window.location.href = '/dashboard.html';
+    }
+
+    function fillAdmin() {
+      document.getElementById('email').value = 'admin@smartcity.com';
+      document.getElementById('password').value = 'admin123';
+    }
+    function fillUser() {
+      document.getElementById('email').value = 'user@smartcity.com';
+      document.getElementById('password').value = 'user123';
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('loginBtn');
+      const errEl = document.getElementById('loginError');
+      btn.disabled = true;
+      btn.textContent = 'Signing in...';
+      errEl.classList.remove('show');
+
+      try {
+        const res = await fetch(`${API}/api/auth/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value
+          })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Login failed');
+
+        localStorage.setItem('sc-token', data.token);
+        localStorage.setItem('sc-user', JSON.stringify(data.user));
+        window.location.href = '/dashboard.html';
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.add('show');
+        btn.disabled = false;
+        btn.textContent = 'Sign in →';
+      }
+    });
+  </script>
+</body>
+</html>
