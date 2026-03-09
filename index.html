@@ -56,7 +56,7 @@
     <div class="card card-sm ov-hero-card" id="hc-alerts"><div class="ov-hero-icon">⚡</div><div class="ov-hero-val" id="ov-alerts">--</div><div class="ov-hero-label">Alerts</div><div class="ov-hero-sub" id="ov-alerts-sub">-- active</div></div>
   </div>
   <div style="display:grid;grid-template-columns:300px 1fr 300px;gap:10px;flex:1;min-height:0">
-    <div style="display:flex;flex-direction:column;gap:10px">
+    <div style="display:flex;flex-direction:column;gap:10px;min-height:0;overflow:hidden">
       <div class="card" style="flex-shrink:0">
         <div class="card-title"><span class="card-icon">📊</span>City Vitals</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
@@ -94,7 +94,7 @@
         <div class="card-title" style="flex-shrink:0"><span class="card-icon">🤖</span>AI Decision Engine<span class="pill p-teal" style="margin-left:auto;font-size:10px" id="ai-status-pill">Analyzing…</span></div>
         <div class="panel-scroll" id="aiDecisions" style="flex:1;overflow-y:auto;min-height:0"><div class="decision-card"><div class="decision-title">⏳ Initializing…</div><div class="decision-body">Fetching live city data…</div></div></div>
       </div>
-      <div class="card" style="flex-shrink:0">
+      <div class="card" style="flex-shrink:0;max-height:180px;overflow:hidden">
         <div class="card-title"><span class="card-icon">📍</span>Zone Status</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="zoneStatusGrid"></div>
       </div>
