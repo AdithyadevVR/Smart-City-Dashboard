@@ -20,7 +20,7 @@ function updateOverviewHero(weather,aqi,avgSpeed){
   setText('ov-traffic',cong>2?'Heavy':cong>0?'Moderate':'Light');setText('ov-traffic-sub','Avg '+(avgSpeed||'--')+' km/h');
   colorHC('hc-temp',temp>35?'red':temp>30?'amber':'blue');colorHC('hc-aqi',aqi>150?'red':aqi>100?'amber':'green');colorHC('hc-traffic',cong>2?'red':cong>0?'amber':'green');colorHC('hc-rain',rain>70?'blue':rain>40?'purple':null);
   setGauge('gauge-aqi',aqi||0,300,aqi>150?'#ef4444':aqi>100?'#f59e0b':'#22c55e');setGauge('gauge-humid',humid||0,100,'#3b82f6');setGauge('gauge-rain',rain||0,100,'#8b5cf6');setGauge('gauge-traffic',Math.min(avgSpeed||0,80),80,'#14b8a6');
-  setText('gauge-aqi-val',aqi||'--');setText('gauge-aqi-cat',aqiCat(aqi||0).label);setText('gauge-humid-val',(humid||'--')+'%');setText('gauge-rain-val',(rain||'--')+'%');setText('gauge-traffic-val',avgSpeed||'--');
+  setText('gauge-aqi-val',aqi!=null?aqi:'--');setText('gauge-aqi-cat',aqiCat(aqi||0).label);setText('gauge-humid-val',humid!=null?humid+'%':'--%');setText('gauge-rain-val',rain!=null?rain+'%':'--%');setText('gauge-traffic-val',avgSpeed||'--');
 }
 function colorHC(id,color){const el=document.getElementById(id);if(!el||!color)return;const m={red:'rgba(239,68,68,0.3)',amber:'rgba(245,158,11,0.25)',green:'rgba(34,197,94,0.25)',blue:'rgba(59,130,246,0.25)',purple:'rgba(139,92,246,0.25)'};el.style.borderColor=m[color]||'';}
 function setGauge(id,value,max,color){const el=document.getElementById(id);if(!el)return;const o=201-Math.min(value/max,1)*201;el.style.strokeDashoffset=o;el.style.stroke=color;}
@@ -86,7 +86,7 @@ function generateAIDecisions(){
     {icon:'🚔',title:'Public Safety Ops',body:`${rain>60?'Deploy traffic police to flood-prone intersections: Kathipara, Koyambedu, Madhya Kailash. Coordinate with NDRF. ':'Routine patrol operations active across all zones. '}${aqi>150?'Issue mask advisory through all 12 police zones via public PA systems.':'Safety indices normal.'}`},
     {icon:'⚡',title:'Smart Grid Optimization',body:`Estimated demand index: ${(aqi/100+temp/40).toFixed(2)}. ${temp>35?'Peak cooling load expected — coordinate with TANGEDCO for load balancing across North and South Chennai feeders.':'Grid conditions normal. Solar output from rooftop installations optimal.'}`},
   ];
-  if(STATE.news.length){const h=STATE.news[0];decisions.push({icon:'📰',title:'News Intelligence',body:`Latest headline: "${h.title.slice(0,80)}…" — Assess for city operations impact. Source: ${h.source}`});}
+  if(STATE.news.length){const h=STATE.news[0];decisions.push({icon:'📰',title:'News Intelligence',body:`Latest headline: "${h.title.slice(0,100)}${h.title.length>100?'…':''}" — Assess for city operations impact. Source: ${h.source}`});}
   const el=document.getElementById('aiDecisions');if(el)el.innerHTML=decisions.map(d=>`<div class="decision-card"><div class="decision-title">${d.icon} ${d.title}</div><div class="decision-body">${d.body}</div></div>`).join('');
   const pill=document.getElementById('ai-status-pill');if(pill){pill.textContent=decisions.length+' active';pill.className='pill p-green';}
 }
