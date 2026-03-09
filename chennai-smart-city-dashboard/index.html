@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chennai Smart City Dashboard</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Leaflet Map -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+
+  <!-- Dashboard Styles -->
+  <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+
+<div class="bg-mesh"></div>
+
+<!-- Setup Overlay -->
+<div class="setup-overlay" id="setupOverlay" style="display:none">
+  <div class="setup-panel">
+    <div class="setup-header">
+      <div><div class="setup-title">⚙️ API Key Configuration</div>
+        <div class="setup-sub">Optional keys unlock richer data. All keys stored locally.</div></div>
+      <button class="setup-close" onclick="closeSetup()">✕</button>
+    </div>
+    <div class="key-item">
+      <div class="key-label">🌦 OpenWeatherMap <span class="key-status" id="owm-status">Checking…</span></div>
+      <div class="key-desc">Weather tile overlays on map. Free tier available.<br><a href="https://openweathermap.org/api" target="_blank" class="key-link">openweathermap.org/api</a></div>
+      <div class="key-input-wrap"><input class="key-input" id="owm-input" type="text" placeholder="Paste OWM API key…"><button class="key-save-btn" onclick="saveKey('OWM_KEY','owm-input','owm-status')">Save</button></div>
+    </div>
+    <div class="key-item">
+      <div class="key-label">🚦 TomTom Traffic <span class="key-status" id="tomtom-status">Checking…</span></div>
+      <div class="key-desc">Live traffic tiles. Free 2,500 req/day.<br><a href="https://developer.tomtom.com" target="_blank" class="key-link">developer.tomtom.com</a></div>
+      <div class="key-input-wrap"><input class="key-input" id="tomtom-input" type="text" placeholder="Paste TomTom key…"><button class="key-save-btn" onclick="saveKey('TOMTOM_KEY','tomtom-input','tomtom-status')">Save</button></div>
+    </div>
+    <div class="key-item">
+      <div class="key-label">🌿 WAQI / AQI.cn <span class="key-status" id="waqi-status">Checking…</span></div>
+      <div class="key-desc">Accurate AQI data.<br><a href="https://aqicn.org/data-platform/token/" target="_blank" class="key-link">aqicn.org/data-platform/token</a></div>
+      <div class="key-input-wrap"><input class="key-input" id="waqi-input" type="text" placeholder="Paste WAQI token…"><button class="key-save-btn" onclick="saveKey('AQI_KEY','waqi-input','waqi-status')">Save</button></div>
+    </div>
+    <div class="setup-actions">
+      <button class="btn-primary" onclick="applyAndReload()">Apply & Reload</button>
+      <button class="btn-secondary" onclick="closeSetup()">Skip</button>
+    </div>
+  </div>
+</div>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-brand">
+    <div class="nav-logo">🏙</div>
+    <div><div class="nav-title">Chennai Smart City</div><div class="nav-sub">Decision Dashboard</div></div>
+  </div>
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">Overview</button>
+    <button class="tab-btn" onclick="switchTab('weather',this)">Weather</button>
+    <button class="tab-btn" onclick="switchTab('traffic',this)">Traffic</button>
+    <button class="tab-btn" onclick="switchTab('environment',this)">Environment</button>
+    <button class="tab-btn" onclick="switchTab('cityservices',this)">🏥 City Services</button>
+    <button class="tab-btn" onclick="switchTab('tourism',this)">🗺 Tourism</button>
+    <button class="tab-btn" onclick="switchTab('alerts',this)">Live Alerts</button>
+  </div>
+  <div class="nav-right">
+    <div class="nav-status"><span class="status-dot"></span><span id="liveLabel">LIVE</span></div>
+    <div class="nav-time" id="navClock">--:--:--</div>
+    <button class="gear-btn" onclick="openSetup()">⚙️</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- ══ OVERVIEW ══ -->
+<div class="tab-panel active" id="tab-overview">
+  <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;flex-shrink:0">
+    <div class="card card-sm ov-hero-card" id="hc-temp"><div class="ov-hero-icon">🌡</div><div class="ov-hero-val" id="ov-temp">--°</div><div class="ov-hero-label">Temperature</div><div class="ov-hero-sub" id="ov-feels">Feels like --°</div></div>
+    <div class="card card-sm ov-hero-card" id="hc-aqi"><div class="ov-hero-icon">🌿</div><div class="ov-hero-val" id="ov-aqi">---</div><div class="ov-hero-label">Air Quality</div><div class="ov-hero-sub" id="ov-aqi-cat">--</div></div>
+    <div class="card card-sm ov-hero-card" id="hc-traffic"><div class="ov-hero-icon">🚦</div><div class="ov-hero-val" id="ov-traffic">--</div><div class="ov-hero-label">Traffic</div><div class="ov-hero-sub" id="ov-traffic-sub">Avg -- km/h</div></div>
+    <div class="card card-sm ov-hero-card" id="hc-humid"><div class="ov-hero-icon">💧</div><div class="ov-hero-val" id="ov-humid">--%</div><div class="ov-hero-label">Humidity</div><div class="ov-hero-sub" id="ov-wind-sub">Wind -- km/h</div></div>
+    <div class="card card-sm ov-hero-card" id="hc-rain"><div class="ov-hero-icon">🌧</div><div class="ov-hero-val" id="ov-rain">--%</div><div class="ov-hero-label">Rain Prob.</div><div class="ov-hero-sub" id="ov-vis-sub">Vis. -- km</div></div>
+    <div class="card card-sm ov-hero-card" id="hc-alerts"><div class="ov-hero-icon">⚡</div><div class="ov-hero-val" id="ov-alerts">--</div><div class="ov-hero-label">Alerts</div><div class="ov-hero-sub" id="ov-alerts-sub">-- active</div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:300px 1fr 300px;gap:10px;flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card" style="flex-shrink:0">
+        <div class="card-title"><span class="card-icon">📊</span>City Vitals</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="gauge-wrap"><svg viewBox="0 0 80 80" width="72" height="72"><circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/><circle cx="40" cy="40" r="32" fill="none" stroke="#22c55e" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" transform="rotate(-90 40 40)" id="gauge-aqi" style="transition:stroke-dashoffset 1s ease,stroke 0.5s"/><text x="40" y="37" text-anchor="middle" font-family="Geist Mono" font-size="13" font-weight="700" fill="white" id="gauge-aqi-val">--</text><text x="40" y="50" text-anchor="middle" font-family="Geist Mono" font-size="7" fill="rgba(255,255,255,0.4)">AQI</text></svg><div class="gauge-label" id="gauge-aqi-cat">--</div></div>
+          <div class="gauge-wrap"><svg viewBox="0 0 80 80" width="72" height="72"><circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/><circle cx="40" cy="40" r="32" fill="none" stroke="#3b82f6" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" transform="rotate(-90 40 40)" id="gauge-humid" style="transition:stroke-dashoffset 1s ease"/><text x="40" y="37" text-anchor="middle" font-family="Geist Mono" font-size="13" font-weight="700" fill="white" id="gauge-humid-val">--%</text><text x="40" y="50" text-anchor="middle" font-family="Geist Mono" font-size="7" fill="rgba(255,255,255,0.4)">HUMID</text></svg><div class="gauge-label">Humidity</div></div>
+          <div class="gauge-wrap"><svg viewBox="0 0 80 80" width="72" height="72"><circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/><circle cx="40" cy="40" r="32" fill="none" stroke="#8b5cf6" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" transform="rotate(-90 40 40)" id="gauge-rain" style="transition:stroke-dashoffset 1s ease"/><text x="40" y="37" text-anchor="middle" font-family="Geist Mono" font-size="13" font-weight="700" fill="white" id="gauge-rain-val">--%</text><text x="40" y="50" text-anchor="middle" font-family="Geist Mono" font-size="7" fill="rgba(255,255,255,0.4)">RAIN</text></svg><div class="gauge-label">Rain Prob.</div></div>
+          <div class="gauge-wrap"><svg viewBox="0 0 80 80" width="72" height="72"><circle cx="40" cy="40" r="32" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="7"/><circle cx="40" cy="40" r="32" fill="none" stroke="#14b8a6" stroke-width="7" stroke-dasharray="201" stroke-dashoffset="201" stroke-linecap="round" transform="rotate(-90 40 40)" id="gauge-traffic" style="transition:stroke-dashoffset 1s ease"/><text x="40" y="37" text-anchor="middle" font-family="Geist Mono" font-size="13" font-weight="700" fill="white" id="gauge-traffic-val">--</text><text x="40" y="50" text-anchor="middle" font-family="Geist Mono" font-size="7" fill="rgba(255,255,255,0.4)">KM/H</text></svg><div class="gauge-label">Avg Speed</div></div>
+        </div>
+      </div>
+      <div class="card" style="flex-shrink:0">
+        <div class="card-title"><span class="card-icon">📡</span>System Status</div>
+        <div class="stat-row"><span class="stat-name" style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span>Open-Meteo</span><span class="pill p-green">Live</span></div>
+        <div class="stat-row"><span class="stat-name" style="display:flex;align-items:center;gap:6px"><span class="status-dot"></span>OpenAQ v3</span><span class="pill p-green" id="ds-openaq">Live</span></div>
+        <div class="stat-row"><span class="stat-name" style="display:flex;align-items:center;gap:6px"><span class="status-dot" id="rss-dot" style="background:var(--amber)"></span>RSS Feeds</span><span class="pill p-blue" id="ds-rss">--</span></div>
+        <div class="stat-row"><span class="stat-name">Refresh cycle</span><span class="stat-val" id="ds-refresh">--:--</span></div>
+        <div class="stat-row"><span class="stat-name">Next refresh</span><span class="stat-val" id="ds-next">5:00</span></div>
+      </div>
+      <div class="card" style="flex:1;min-height:0">
+        <div class="card-title"><span class="card-icon">📈</span>24h Activity</div>
+        <canvas id="activityCanvas" style="width:100%;height:80px;display:block"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:6px">
+          <span style="font-size:10px;color:var(--t3);font-family:'Geist Mono',monospace">00:00</span>
+          <span style="font-size:10px;color:var(--t3);font-family:'Geist Mono',monospace">12:00</span>
+          <span style="font-size:10px;color:var(--t3);font-family:'Geist Mono',monospace">Now</span>
+        </div>
+        <div style="display:flex;gap:12px;margin-top:8px;flex-wrap:wrap">
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:8px;height:2px;background:#3b82f6;display:inline-block;border-radius:1px"></span>Traffic</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:8px;height:2px;background:#22c55e;display:inline-block;border-radius:1px"></span>AQI</span>
+          <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--t2)"><span style="width:8px;height:2px;background:#8b5cf6;display:inline-block;border-radius:1px"></span>Rain</span>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+        <div class="card-title" style="flex-shrink:0"><span class="card-icon">🤖</span>AI Decision Engine<span class="pill p-teal" style="margin-left:auto;font-size:10px" id="ai-status-pill">Analyzing…</span></div>
+        <div class="panel-scroll" id="aiDecisions" style="flex:1"><div class="decision-card"><div class="decision-title">⏳ Initializing…</div><div class="decision-body">Fetching live city data…</div></div></div>
+      </div>
+      <div class="card" style="flex-shrink:0">
+        <div class="card-title"><span class="card-icon">📍</span>Zone Status</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="zoneStatusGrid"></div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">📰</span>Live Headlines<span class="pill p-blue" style="margin-left:auto;font-size:10px" id="ov-news-count">--</span></div>
+      <div class="panel-scroll" id="ovNewsFeed" style="flex:1"><div style="color:var(--t2);font-size:13px;padding:12px">Loading news…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ WEATHER ══ -->
+<div class="tab-panel" id="tab-weather">
+  <div class="grid-4" style="flex-shrink:0">
+    <div class="card card-sm"><div class="card-label">Temperature</div><div class="card-value" id="w-temp">--°C</div><div class="card-sub" id="w-feels">Feels like --°C</div></div>
+    <div class="card card-sm"><div class="card-label">Humidity</div><div class="card-value" id="w-humid">--%</div><div class="card-sub" id="w-dew">Dew --°C</div></div>
+    <div class="card card-sm"><div class="card-label">Wind</div><div class="card-value" id="w-wind">-- km/h</div><div class="card-sub" id="w-wdir">Direction --°</div></div>
+    <div class="card card-sm"><div class="card-label">Rain Prob.</div><div class="card-value" id="w-rain">--%</div><div class="card-sub" id="w-vis">Visibility -- km</div></div>
+  </div>
+  <div class="grid-map-left" style="flex:1;min-height:0">
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card" style="flex-shrink:0">
+        <div class="card-title"><span class="card-icon">📅</span>7-Day Forecast</div>
+        <div class="forecast-row" id="forecastRow"></div>
+      </div>
+      <div class="card" style="flex:1">
+        <div class="card-title"><span class="card-icon">🧭</span>Station Data</div>
+        <div class="stat-row"><span class="stat-name">Nungambakkam</span><span class="stat-val" id="st-1">--°C</span></div>
+        <div class="stat-row"><span class="stat-name">Meenambakkam Airport</span><span class="stat-val" id="st-2">--°C</span></div>
+        <div class="stat-row"><span class="stat-name">Thiruvallur</span><span class="stat-val" id="st-3">--°C</span></div>
+        <div class="stat-row"><span class="stat-name">Chennai Port</span><span class="stat-val" id="st-4">--°C</span></div>
+        <div style="margin-top:16px">
+          <div class="card-title"><span class="card-icon">🌬</span>Wind Direction</div>
+          <div class="compass-wrap">
+            <svg id="compassSvg" class="compass-svg" width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="55" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+              <text x="60" y="12" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11" font-family="Geist Mono">N</text>
+              <text x="108" y="64" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11" font-family="Geist Mono">E</text>
+              <text x="60" y="114" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11" font-family="Geist Mono">S</text>
+              <text x="12" y="64" text-anchor="middle" fill="rgba(255,255,255,0.5)" font-size="11" font-family="Geist Mono">W</text>
+              <g id="compassArrow" transform="rotate(0,60,60)">
+                <polygon points="60,15 55,65 65,65" fill="rgba(59,130,246,0.8)"/>
+                <polygon points="60,105 55,65 65,65" fill="rgba(239,68,68,0.6)"/>
+                <circle cx="60" cy="60" r="5" fill="rgba(255,255,255,0.3)"/>
+              </g>
+            </svg>
+            <div class="stat-val" id="windDirLabel">-- (--°)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;padding:12px">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">🗺</span>Weather Map<span style="font-size:11px;color:var(--t3);margin-left:auto;font-family:'Geist Mono',monospace" id="owm-key-note"></span></div>
+      <div class="map-wrap" style="flex:1;position:relative">
+        <div class="map-overlay-btns" id="weatherLayerBtns">
+          <button class="map-layer-btn active" onclick="setWeatherLayer('none',this)">Base</button>
+          <button class="map-layer-btn" onclick="setWeatherLayer('precipitation_new',this)">Rain</button>
+          <button class="map-layer-btn" onclick="setWeatherLayer('clouds_new',this)">Cloud</button>
+          <button class="map-layer-btn" onclick="setWeatherLayer('wind_new',this)">Wind</button>
+          <button class="map-layer-btn" onclick="setWeatherLayer('temp_new',this)">Temp</button>
+        </div>
+        <div id="weatherMapRain" class="rain-overlay" style="display:none"></div>
+        <div id="weatherMap" class="map-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TRAFFIC ══ -->
+<div class="tab-panel" id="tab-traffic">
+  <div class="grid-4" style="flex-shrink:0">
+    <div class="card card-sm"><div class="card-label">Avg Speed</div><div class="card-value" id="t-speed">-- km/h</div><div class="card-sub">City-wide average</div></div>
+    <div class="card card-sm"><div class="card-label">Congested Roads</div><div class="card-value" id="t-cong">--</div><div class="card-sub">of 6 corridors</div></div>
+    <div class="card card-sm"><div class="card-label">Incidents</div><div class="card-value" id="t-inc">--</div><div class="card-sub">Reported today</div></div>
+    <div class="card card-sm"><div class="card-label">CMRL Metro</div><div class="card-value">Operational</div><div class="card-sub">41 stations active</div></div>
+  </div>
+  <div class="grid-map-left" style="flex:1;min-height:0">
+    <div class="card" style="display:flex;flex-direction:column;padding:12px;overflow:hidden">
+      <div class="card-title"><span class="card-icon">🛣</span>Corridors</div>
+      <div class="panel-scroll" id="corridorList"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;padding:12px">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">🚦</span>Traffic Map</div>
+      <div class="map-wrap" style="flex:1;position:relative">
+        <div class="map-overlay-btns" id="trafficLayerBtns">
+          <button class="map-layer-btn active" onclick="setTrafficLayer('flow',this)">Flow</button>
+          <button class="map-layer-btn" onclick="setTrafficLayer('incidents',this)">Incidents</button>
+          <button class="map-layer-btn" onclick="setTrafficLayer('both',this)">Both</button>
+        </div>
+        <div id="trafficMap" class="map-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ENVIRONMENT ══ -->
+<div class="tab-panel" id="tab-environment">
+  <div class="grid-4" style="flex-shrink:0">
+    <div class="card card-sm"><div class="card-label">AQI</div><div class="card-value" id="e-aqi">---</div><div class="card-sub" id="e-aqi-cat">--</div><div class="aqi-bar-wrap"><div class="aqi-bar"><div class="aqi-needle" id="aqiNeedle" style="left:0%"></div></div></div></div>
+    <div class="card card-sm"><div class="card-label">PM2.5</div><div class="card-value" id="e-pm25">-- µg/m³</div><div class="card-sub">24h avg</div></div>
+    <div class="card card-sm"><div class="card-label">PM10</div><div class="card-value" id="e-pm10">-- µg/m³</div><div class="card-sub">Coarse particles</div></div>
+    <div class="card card-sm"><div class="card-label">NO₂</div><div class="card-value" id="e-no2">-- µg/m³</div><div class="card-sub">Nitrogen dioxide</div></div>
+  </div>
+  <div class="env-grid" style="flex:1;min-height:0">
+    <div class="card" style="overflow:hidden"><div class="card-title"><span class="card-icon">🌿</span>Pollutant Breakdown</div><div class="panel-scroll" id="pollutantList"></div></div>
+    <div class="card" style="overflow:hidden"><div class="card-title"><span class="card-icon">📍</span>Monitoring Stations</div><div class="panel-scroll" id="stationList"></div></div>
+    <div class="card">
+      <div class="card-title"><span class="card-icon">🌬</span>Wind & Atmosphere</div>
+      <div style="display:flex;align-items:center;gap:20px;flex-wrap:wrap">
+        <div class="compass-wrap">
+          <svg id="envCompassSvg" class="compass-svg" width="100" height="100" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="55" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1.5"/>
+            <text x="60" y="12" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="Geist Mono">N</text>
+            <text x="108" y="64" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="Geist Mono">E</text>
+            <text x="60" y="114" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="Geist Mono">S</text>
+            <text x="12" y="64" text-anchor="middle" fill="rgba(255,255,255,0.4)" font-size="10" font-family="Geist Mono">W</text>
+            <g id="envCompassArrow" transform="rotate(0,60,60)">
+              <polygon points="60,15 55,65 65,65" fill="rgba(20,184,166,0.9)"/>
+              <polygon points="60,105 55,65 65,65" fill="rgba(239,68,68,0.5)"/>
+              <circle cx="60" cy="60" r="5" fill="rgba(255,255,255,0.2)"/>
+            </g>
+          </svg>
+          <div class="stat-val" id="envWindLabel">-- (--°)</div>
+        </div>
+        <div style="flex:1">
+          <div class="stat-row"><span class="stat-name">Wind Speed</span><span class="stat-val" id="env-wspeed">--</span></div>
+          <div class="stat-row"><span class="stat-name">Pressure</span><span class="stat-val" id="env-press">-- hPa</span></div>
+          <div class="stat-row"><span class="stat-name">UV Index</span><span class="stat-val" id="env-uv">--</span></div>
+          <div class="stat-row"><span class="stat-name">Visibility</span><span class="stat-val" id="env-vis">-- km</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title"><span class="card-icon">⚠️</span>Health Advisory</div><div id="healthAdvisory" class="panel-scroll"></div></div>
+  </div>
+</div>
+
+<!-- ══ CITY SERVICES ══ -->
+<div class="tab-panel" id="tab-cityservices">
+  <!-- Emergency banner -->
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;flex-shrink:0">
+    <div class="sos-banner"><div><div class="sos-number">100</div><div class="sos-label">🚔 Police Emergency</div></div></div>
+    <div class="sos-banner" style="border-color:rgba(239,68,68,0.28)"><div><div class="sos-number">108</div><div class="sos-label">🚑 Ambulance</div></div></div>
+    <div class="sos-banner" style="border-color:rgba(245,158,11,0.3);background:linear-gradient(135deg,rgba(245,158,11,0.08),transparent)"><div><div class="sos-number" style="color:var(--amber)">101</div><div class="sos-label">🔥 Fire Brigade</div></div></div>
+    <div class="sos-banner" style="border-color:rgba(59,130,246,0.3);background:linear-gradient(135deg,rgba(59,130,246,0.08),transparent)"><div><div class="sos-number" style="color:var(--blue)">1916</div><div class="sos-label">🏙 Chennai Corporation</div></div></div>
+    <div class="sos-banner" style="border-color:rgba(20,184,166,0.3);background:linear-gradient(135deg,rgba(20,184,166,0.08),transparent)"><div><div class="sos-number" style="color:var(--teal)">112</div><div class="sos-label">🆘 Unified Emergency</div></div></div>
+  </div>
+  <!-- Filter chips -->
+  <div class="filter-row" id="serviceFilterRow">
+    <span class="filter-chip" data-layer="hospitals" style="background:rgba(239,68,68,0.12);border-color:rgba(239,68,68,0.3);color:#ef4444" onclick="toggleServiceLayer('hospitals',this)">🏥 Hospitals</span>
+    <span class="filter-chip" data-layer="police" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#3b82f6" onclick="toggleServiceLayer('police',this)">🚔 Police</span>
+    <span class="filter-chip" data-layer="fire" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="toggleServiceLayer('fire',this)">🔥 Fire Stations</span>
+    <span class="filter-chip" data-layer="pharmacy" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="toggleServiceLayer('pharmacy',this)">💊 Pharmacies</span>
+    <span class="filter-chip" data-layer="blood" style="background:rgba(239,68,68,0.1);border-color:rgba(239,68,68,0.2);color:#f87171" onclick="toggleServiceLayer('blood',this)">🩸 Blood Banks</span>
+    <span class="filter-chip" data-layer="clinics" style="background:rgba(20,184,166,0.12);border-color:rgba(20,184,166,0.3);color:#14b8a6" onclick="toggleServiceLayer('clinics',this)">🏪 Clinics / PHC</span>
+    <span class="filter-chip" data-layer="atm" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3);color:#8b5cf6" onclick="toggleServiceLayer('atm',this)">🏧 ATMs</span>
+    <span class="filter-chip" data-layer="petrol" style="background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#f97316" onclick="toggleServiceLayer('petrol',this)">⛽ Fuel Stations</span>
+  </div>
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:12px;flex:1;min-height:0">
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">📋</span>Nearby Services<span class="live-badge" style="margin-left:auto">Live Data</span></div>
+      <div class="search-bar"><input class="search-input" id="serviceSearchInput" placeholder="Search hospitals, police, ATMs…" oninput="filterPoiList(this.value)"></div>
+      <div class="panel-scroll" id="poiListPanel" style="flex:1"><div style="color:var(--t2);font-size:12px;padding:8px">Loading…</div></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;padding:12px">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">🗺</span>City Services Map<span class="pill p-teal" style="margin-left:auto;font-size:10px" id="poiCount">Loading…</span></div>
+      <div class="map-wrap" style="flex:1;position:relative"><div id="cityServicesMap" class="map-container"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOURISM ══ -->
+<div class="tab-panel" id="tab-tourism">
+  <div class="grid-5" style="flex-shrink:0">
+    <div class="card card-sm ov-hero-card"><div class="ov-hero-icon">🏛</div><div class="ov-hero-val">47</div><div class="ov-hero-label">Monuments</div><div class="ov-hero-sub">Heritage sites</div></div>
+    <div class="card card-sm ov-hero-card"><div class="ov-hero-icon">🙏</div><div class="ov-hero-val">234</div><div class="ov-hero-label">Temples</div><div class="ov-hero-sub">Registered</div></div>
+    <div class="card card-sm ov-hero-card"><div class="ov-hero-icon">🏖</div><div class="ov-hero-val">13 km</div><div class="ov-hero-label">Coastline</div><div class="ov-hero-sub">Urban beach</div></div>
+    <div class="card card-sm ov-hero-card"><div class="ov-hero-icon">👥</div><div class="ov-hero-val" id="tour-crowd">--</div><div class="ov-hero-label">Crowd Level</div><div class="ov-hero-sub" id="tour-best-time">Best time: --</div></div>
+    <div class="card card-sm ov-hero-card"><div class="ov-hero-icon">🌤</div><div class="ov-hero-val" id="tour-outdoor">--</div><div class="ov-hero-label">Outdoor Index</div><div class="ov-hero-sub" id="tour-outdoor-sub">Weather suitability</div></div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-chip" data-layer="heritage" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.3);color:#f59e0b" onclick="toggleTourLayer('heritage',this)">🏛 Heritage</span>
+    <span class="filter-chip" data-layer="temples" style="background:rgba(249,115,22,0.12);border-color:rgba(249,115,22,0.3);color:#f97316" onclick="toggleTourLayer('temples',this)">🙏 Temples</span>
+    <span class="filter-chip" data-layer="beaches" style="background:rgba(59,130,246,0.12);border-color:rgba(59,130,246,0.3);color:#3b82f6" onclick="toggleTourLayer('beaches',this)">🏖 Beaches</span>
+    <span class="filter-chip" data-layer="museums" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.3);color:#8b5cf6" onclick="toggleTourLayer('museums',this)">🏛 Museums</span>
+    <span class="filter-chip" data-layer="malls" style="background:rgba(20,184,166,0.12);border-color:rgba(20,184,166,0.3);color:#14b8a6" onclick="toggleTourLayer('malls',this)">🛍 Shopping</span>
+    <span class="filter-chip" data-layer="restaurants" style="background:rgba(34,197,94,0.12);border-color:rgba(34,197,94,0.3);color:#22c55e" onclick="toggleTourLayer('restaurants',this)">🍽 Food</span>
+    <span class="filter-chip" data-layer="hotels" style="background:rgba(59,130,246,0.1);border-color:rgba(59,130,246,0.2);color:#60a5fa" onclick="toggleTourLayer('hotels',this)">🏨 Hotels</span>
+    <span class="filter-chip" data-layer="transport" style="background:rgba(255,255,255,0.05);border-color:rgba(255,255,255,0.12);color:var(--t2)" onclick="toggleTourLayer('transport',this)">🚌 Transport Hubs</span>
+  </div>
+  <div style="display:grid;grid-template-columns:340px 1fr;gap:12px;flex:1;min-height:0">
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">⭐</span>Top Attractions<span id="tourWeatherTip" class="pill p-green" style="margin-left:auto;font-size:10px">Good weather</span></div>
+      <div class="panel-scroll" id="attractionList" style="flex:1"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;padding:12px">
+      <div class="card-title" style="flex-shrink:0"><span class="card-icon">🗺</span>Tourism Map<span class="pill p-amber" style="margin-left:auto;font-size:10px" id="tourPoiCount">--</span></div>
+      <div class="map-wrap" style="flex:1;position:relative"><div id="tourismMap" class="map-container"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ALERTS ══ -->
+<div class="tab-panel" id="tab-alerts">
+  <div class="grid-2" style="flex:1;min-height:0">
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-title"><span class="card-icon">📰</span>Live News Feed</div>
+      <div class="panel-scroll" id="newsAlerts"></div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+      <div class="card-title"><span class="card-icon">⚡</span>System Alerts</div>
+      <div class="panel-scroll" id="systemAlerts"></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<div class="news-ticker">
+  <div class="ticker-label">📡 LIVE</div>
+  <div class="ticker-track"><div class="ticker-inner" id="tickerInner"><span class="ticker-item">Loading headlines…</span></div></div>
+</div>
+
+  <!-- Data Modules -->
+  <script src="src/js/config.js"></script>
+  <script src="src/js/data-services.js"></script>
+  <script src="src/js/data-tourism.js"></script>
+
+  <!-- Map Modules -->
+  <script src="src/js/map-weather.js"></script>
+  <script src="src/js/map-traffic.js"></script>
+
+  <!-- API Modules -->
+  <script src="src/js/api-weather.js"></script>
+  <script src="src/js/api-aqi.js"></script>
+  <script src="src/js/api-traffic.js"></script>
+  <script src="src/js/api-news.js"></script>
+
+  <!-- Dashboard Logic -->
+  <script src="src/js/dashboard.js"></script>
+  <script src="src/js/main.js"></script>
+
+</body>
+</html>
