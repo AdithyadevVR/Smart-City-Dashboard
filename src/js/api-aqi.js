@@ -10,7 +10,7 @@ async function fetchAQI(){
   let aqi=0,pm25=0,pm10=0,no2=0;
   try{
     if(AQI_KEY){const r=await fetch(`https://api.waqi.info/feed/Chennai/?token=${AQI_KEY}`);const d=await r.json();if(d.status==='ok'){aqi=d.data.aqi;pm25=d.data.iaqi?.pm25?.v||0;pm10=d.data.iaqi?.pm10?.v||0;no2=d.data.iaqi?.no2?.v||0;document.getElementById('ds-openaq').textContent='WAQI';document.getElementById('ds-openaq').className='pill p-teal';}}
-    else{const r=await fetch('https://api.openaq.org/v3/locations?country=IN&city=Chennai&limit=5');const d=await r.json();if(d.results&&d.results.length){const r2=await fetch(`https://api.openaq.org/v3/locations/${d.results[0].id}/measurements?limit=20`);const d2=await r2.json();if(d2.results){d2.results.forEach(m=>{if(m.parameter==='pm25')pm25=m.value;if(m.parameter==='pm10')pm10=m.value;if(m.parameter==='no2')no2=m.value;});aqi=pm25ToAQI(pm25);}}}
+    else{const r=await fetch('https://corsproxy.io/?https://api.openaq.org/v3/locations?country=IN&city=Chennai&limit=5');const d=await r.json();if(d.results&&d.results.length){const r2=await fetch(`https://corsproxy.io/?https://api.openaq.org/v3/locations/${d.results[0].id}/measurements?limit=20`);const d2=await r2.json();if(d2.results){d2.results.forEach(m=>{if(m.parameter==='pm25')pm25=m.value;if(m.parameter==='pm10')pm10=m.value;if(m.parameter==='no2')no2=m.value;});aqi=pm25ToAQI(pm25);}}}
   }catch(e){}
   if(!aqi){aqi=Math.floor(Math.random()*80+40);pm25=aqi*0.4;pm10=aqi*0.6;no2=aqi*0.1;}
   STATE.aqi=aqi;updateAQIUI(aqi,pm25,pm10,no2);return aqi;
