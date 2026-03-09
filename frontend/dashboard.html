@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartCity Dashboard</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/dashboard.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">🏙️</div>
+    <div>
+      <div class="topbar-logo-text">SmartCity</div>
+      <div class="topbar-logo-sub">Decision Dashboard</div>
+    </div>
+  </div>
+
+  <div class="topbar-center">
+    <div class="alert-ticker">
+      <div class="ticker-inner">
+        <span class="ticker-dot"></span>
+        <span class="ticker-text" id="tickerText">Loading live city alerts...</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="topbar-right">
+    <div class="topbar-clock" id="clock">--:--:--</div>
+    <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+    <button class="notif-btn" id="notifBtn" title="Notifications">
+      🔔 <span class="notif-badge" id="notifCount">0</span>
+    </button>
+    <div class="topbar-user" id="topbarUser">
+      <div class="avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Loading...</div>
+        <div class="user-role-badge" id="userRoleBadge">user</div>
+      </div>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="logout()">Logout</button>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-section-title">Overview</div>
+  <a class="nav-item active" data-page="overview" onclick="navigate('overview')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Overview</span>
+  </a>
+
+  <div class="sidebar-section-title">City Modules</div>
+  <a class="nav-item" data-page="traffic" onclick="navigate('traffic')">
+    <span class="nav-icon">🚦</span>
+    <span class="nav-label">Traffic</span>
+  </a>
+  <a class="nav-item" data-page="weather" onclick="navigate('weather')">
+    <span class="nav-icon">🌤️</span>
+    <span class="nav-label">Weather</span>
+  </a>
+  <a class="nav-item" data-page="energy" onclick="navigate('energy')">
+    <span class="nav-icon">⚡</span>
+    <span class="nav-label">Energy</span>
+  </a>
+  <a class="nav-item" data-page="waste" onclick="navigate('waste')">
+    <span class="nav-icon">🗑️</span>
+    <span class="nav-label">Waste</span>
+  </a>
+  <a class="nav-item" data-page="water" onclick="navigate('water')">
+    <span class="nav-icon">💧</span>
+    <span class="nav-label">Water</span>
+  </a>
+
+  <div class="sidebar-section-title">Management</div>
+  <a class="nav-item" data-page="alerts" onclick="navigate('alerts')">
+    <span class="nav-icon">🔔</span>
+    <span class="nav-label">Alerts</span>
+    <span class="nav-count" id="sidebarAlertCount">0</span>
+  </a>
+  <a class="nav-item admin-only hidden" data-page="admin" onclick="navigate('admin')">
+    <span class="nav-icon">⚙️</span>
+    <span class="nav-label">Admin Panel</span>
+  </a>
+
+  <div class="sidebar-footer">
+    <div style="font-size:0.75rem; color: var(--text-tertiary); padding: 8px;">
+      Last updated: <span id="lastUpdated">--</span>
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" id="mainContent">
+
+  <!-- OVERVIEW PAGE -->
+  <div class="module-page active" id="page-overview">
+    <div class="page-header animate-fade">
+      <h1 class="page-title serif">City Overview</h1>
+      <p class="page-subtitle">Real-time monitoring across all city systems</p>
+    </div>
+
+    <div class="kpi-row animate-fade animate-delay-1">
+      <div class="kpi-card blue">
+        <div class="kpi-icon">🚦</div>
+        <div class="kpi-value" id="kpi-traffic">--</div>
+        <div class="kpi-label">Traffic Index</div>
+        <div class="kpi-change" id="kpi-traffic-change">Loading...</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-icon">🌡️</div>
+        <div class="kpi-value" id="kpi-temp">--°</div>
+        <div class="kpi-label">Avg Temperature</div>
+        <div class="kpi-change" id="kpi-weather-change">Loading...</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-icon">⚡</div>
+        <div class="kpi-value" id="kpi-energy">--%</div>
+        <div class="kpi-label">Grid Load</div>
+        <div class="kpi-change" id="kpi-energy-change">Loading...</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-icon">🗑️</div>
+        <div class="kpi-value" id="kpi-waste">--%</div>
+        <div class="kpi-label">Avg Bin Fill</div>
+        <div class="kpi-change" id="kpi-waste-change">Loading...</div>
+      </div>
+      <div class="kpi-card purple">
+        <div class="kpi-icon">💧</div>
+        <div class="kpi-value" id="kpi-water">--%</div>
+        <div class="kpi-label">Reservoir Level</div>
+        <div class="kpi-change" id="kpi-water-change">Loading...</div>
+      </div>
+    </div>
+
+    <div class="grid-2 section-gap animate-fade animate-delay-2">
+      <div class="card">
+        <div class="card-header">
+          <h3>City Health Score</h3>
+          <span class="badge badge-success" id="healthBadge">Good</span>
+        </div>
+        <div class="card-body">
+          <canvas id="overviewRadarChart" height="260"></canvas>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header">
+          <h3>Active Alerts</h3>
+          <button class="btn btn-secondary btn-sm" onclick="navigate('alerts')">View all</button>
+        </div>
+        <div class="card-body" id="overviewAlertsList" style="max-height:280px;overflow-y:auto;">
+          <div style="color:var(--text-tertiary);font-size:0.875rem;">Loading alerts...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-3 animate-fade animate-delay-3" id="overviewModuleCards">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- TRAFFIC PAGE -->
+  <div class="module-page" id="page-traffic">
+    <div class="page-header">
+      <h1 class="page-title serif">Traffic Management</h1>
+      <p class="page-subtitle">Live congestion map and incident control</p>
+    </div>
+    <div class="grid-2-1 section-gap">
+      <div class="map-container" style="min-height:460px;">
+        <svg id="trafficMap" class="map-svg" viewBox="0 0 700 460" style="min-height:460px;"></svg>
+        <div class="map-legend">
+          <div class="legend-item"><span class="legend-dot" style="background:#10b981"></span> Clear</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f59e0b"></span> Moderate</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#f97316"></span> Heavy</div>
+          <div class="legend-item"><span class="legend-dot" style="background:#ef4444"></span> Blocked</div>
+        </div>
+        <div class="map-tooltip-popup" id="trafficTooltip"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-header"><h3>District Status</h3></div>
+          <div class="card-body" id="trafficDistrictList" style="padding-top:8px;"></div>
+        </div>
+        <div class="card admin-only hidden" id="trafficControls">
+          <div class="card-header"><h3>Controls</h3><span class="badge badge-primary">Admin</span></div>
+          <div class="card-body" id="trafficControlsBody"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Speed & Volume</h3></div>
+        <div class="card-body"><canvas id="trafficSpeedChart" height="180"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Incident Log</h3></div>
+        <div class="card-body" id="trafficIncidentLog" style="max-height:220px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEATHER PAGE -->
+  <div class="module-page" id="page-weather">
+    <div class="page-header">
+      <h1 class="page-title serif">Weather Monitoring</h1>
+      <p class="page-subtitle">District conditions and forecasts</p>
+    </div>
+    <div class="grid-2-1 section-gap">
+      <div class="map-container" style="min-height:440px;">
+        <svg id="weatherMap" class="map-svg" viewBox="0 0 700 440" style="min-height:440px;"></svg>
+        <div class="map-legend" id="weatherMapLegend"></div>
+        <div class="map-tooltip-popup" id="weatherTooltip"></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-header"><h3>Current Conditions</h3></div>
+          <div class="card-body" id="weatherCurrentCard"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Air Quality</h3></div>
+          <div class="card-body" id="weatherAQICard"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card section-gap">
+      <div class="card-header"><h3>7-Day Forecast</h3></div>
+      <div class="card-body">
+        <div class="forecast-strip" id="forecastStrip"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><h3>Temperature by District</h3></div>
+      <div class="card-body"><canvas id="weatherTempChart" height="160"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ENERGY PAGE -->
+  <div class="module-page" id="page-energy">
+    <div class="page-header">
+      <h1 class="page-title serif">Energy Management</h1>
+      <p class="page-subtitle">Grid load, renewables and district consumption</p>
+    </div>
+    <div class="grid-3 section-gap" id="energyKPIRow"></div>
+    <div class="grid-2-1 section-gap">
+      <div class="card">
+        <div class="card-header"><h3>Hourly Load Curve</h3></div>
+        <div class="card-body"><canvas id="energyLoadChart" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Energy Sources</h3></div>
+        <div class="card-body" style="display:flex;align-items:center;justify-content:center;">
+          <canvas id="energyDonut" height="220" width="220"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>District Consumption</h3></div>
+        <div class="card-body" id="energyDistrictList"></div>
+      </div>
+      <div class="card admin-only hidden" id="energyControlsCard">
+        <div class="card-header"><h3>Grid Controls</h3><span class="badge badge-primary">Admin</span></div>
+        <div class="card-body" id="energyControlsBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WASTE PAGE -->
+  <div class="module-page" id="page-waste">
+    <div class="page-header">
+      <h1 class="page-title serif">Waste Management</h1>
+      <p class="page-subtitle">Bin levels, collection routes and recycling stats</p>
+    </div>
+    <div class="grid-2 section-gap">
+      <div class="card">
+        <div class="card-header">
+          <h3>Bin Fill Levels by District</h3>
+        </div>
+        <div class="card-body" id="wasteBinLevels"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Collection Status Map</h3></div>
+        <div class="card-body">
+          <svg id="wasteMap" viewBox="0 0 400 320" style="width:100%;display:block;"></svg>
+          <div style="margin-top:12px;" id="wasteStatusList"></div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Weekly Collection Data</h3></div>
+        <div class="card-body"><canvas id="wasteWeeklyChart" height="200"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><h3>Recycling Rate</h3></div>
+        <div class="card-body" style="display:flex;align-items:center;justify-content:center;">
+          <canvas id="wasteRecyclingChart" height="200" width="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="card admin-only hidden section-gap" id="wasteControlsCard">
+      <div class="card-header"><h3>Collection Controls</h3><span class="badge badge-primary">Admin</span></div>
+      <div class="card-body" id="wasteControlsBody"></div>
+    </div>
+  </div>
+
+  <!-- WATER PAGE -->
+  <div class="module-page" id="page-water">
+    <div class="page-header">
+      <h1 class="page-title serif">Water Management</h1>
+      <p class="page-subtitle">Reservoir levels, pressure zones and consumption</p>
+    </div>
+    <div class="gauges-row section-gap" id="waterGauges"></div>
+    <div class="grid-2-1 section-gap">
+      <div class="card">
+        <div class="card-header"><h3>24h Consumption Trend</h3></div>
+        <div class="card-body"><canvas id="waterConsumptionChart" height="220"></canvas></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="card">
+          <div class="card-header"><h3>Pressure Zones</h3></div>
+          <div class="card-body">
+            <svg id="waterPressureMap" viewBox="0 0 280 220" style="width:100%;display:block;"></svg>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><h3>Leak Alerts</h3></div>
+        <div class="card-body" id="waterLeakList"></div>
+      </div>
+      <div class="card admin-only hidden" id="waterControlsCard">
+        <div class="card-header"><h3>Valve Controls</h3><span class="badge badge-primary">Admin</span></div>
+        <div class="card-body" id="waterControlsBody"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTS PAGE -->
+  <div class="module-page" id="page-alerts">
+    <div class="page-header">
+      <h1 class="page-title serif">Alert Center</h1>
+      <p class="page-subtitle">All active city alerts and notifications</p>
+    </div>
+    <div id="alertsContainer"></div>
+  </div>
+
+  <!-- ADMIN PAGE -->
+  <div class="module-page admin-only" id="page-admin">
+    <div class="page-header">
+      <h1 class="page-title serif">Admin Panel</h1>
+      <p class="page-subtitle">User management and system configuration</p>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('users')">👥 Users</button>
+      <button class="admin-tab" onclick="switchAdminTab('metrics')">📊 City Metrics</button>
+      <button class="admin-tab" onclick="switchAdminTab('allalerts')">🔔 Alerts</button>
+    </div>
+
+    <div id="adminTabUsers">
+      <div class="card">
+        <div class="card-header" style="padding:20px 24px;">
+          <h3>User Management</h3>
+          <button class="btn btn-primary btn-sm" onclick="openUserModal()">+ Add User</button>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div class="table-wrapper">
+            <table class="data-table" id="usersTable">
+              <thead>
+                <tr>
+                  <th>Name</th><th>Email</th><th>Role</th><th>Department</th><th>Last Login</th><th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"><tr><td colspan="7" style="text-align:center;color:var(--text-tertiary);">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminTabMetrics" class="hidden">
+      <div class="card">
+        <div class="card-header" style="padding:20px 24px;">
+          <h3>City Data Editor</h3>
+          <div class="flex gap-2">
+            <select class="form-select" id="metricsModuleSelect" style="width:auto;" onchange="loadMetricsTable()">
+              <option value="traffic">Traffic</option>
+              <option value="weather">Weather</option>
+              <option value="energy">Energy</option>
+              <option value="waste">Waste</option>
+              <option value="water">Water</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body" style="padding-top:0;">
+          <div class="table-wrapper" id="metricsTableWrap">
+            <table class="data-table" id="metricsTable">
+              <thead id="metricsTableHead"></thead>
+              <tbody id="metricsTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminTabAllalerts" class="hidden">
+      <div class="card">
+        <div class="card-header" style="padding:20px 24px;">
+          <h3>All Alerts</h3>
+          <button class="btn btn-primary btn-sm" onclick="openCreateAlertModal()">+ Create Alert</button>
+        </div>
+        <div class="card-body" style="padding-top:0;" id="adminAllAlerts">Loading...</div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title" id="userModalTitle">Add User</h3>
+      <button class="btn-icon" onclick="closeModal('userModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editUserId" />
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input class="form-input" type="text" id="userFormName" placeholder="Jane Smith" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" type="email" id="userFormEmail" placeholder="jane@smartcity.com" required />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password <span style="color:var(--text-tertiary);font-size:0.8rem;">(leave blank to keep current)</span></label>
+        <input class="form-input" type="password" id="userFormPassword" placeholder="••••••••" />
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Role</label>
+          <select class="form-select" id="userFormRole">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Department</label>
+          <input class="form-input" type="text" id="userFormDept" placeholder="e.g. Traffic Control" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('userModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveUser()">Save User</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="metricModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Edit Metric</h3>
+      <button class="btn-icon" onclick="closeModal('metricModal')">✕</button>
+    </div>
+    <div class="modal-body" id="metricModalBody"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('metricModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMetric()">Save Changes</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="createAlertModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 class="modal-title">Create Alert</h3>
+      <button class="btn-icon" onclick="closeModal('createAlertModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Module</label>
+        <select class="form-select" id="alertFormModule">
+          <option value="traffic">Traffic</option>
+          <option value="weather">Weather</option>
+          <option value="energy">Energy</option>
+          <option value="waste">Waste</option>
+          <option value="water">Water</option>
+          <option value="system">System</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Message</label>
+        <textarea class="form-textarea" id="alertFormMsg" rows="3" placeholder="Describe the alert..."></textarea>
+      </div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="form-label">Severity</label>
+          <select class="form-select" id="alertFormSeverity">
+            <option value="info">Info</option>
+            <option value="warning">Warning</option>
+            <option value="critical">Critical</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">District</label>
+          <input class="form-input" type="text" id="alertFormDistrict" placeholder="e.g. Downtown" />
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('createAlertModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createAlert()">Create Alert</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container"></div>
+
+<script src="js/auth.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/traffic.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/energy.js"></script>
+<script src="js/waste.js"></script>
+<script src="js/water.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
