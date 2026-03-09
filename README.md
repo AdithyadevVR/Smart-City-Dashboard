@@ -1,213 +1,102 @@
-# 🏙️ SmartCity Decision Dashboard
+# 🏙 Chennai Smart City Dashboard
 
-A full-stack Smart City management dashboard built with **Node.js, Express, MongoDB, and a modern HTML/CSS/JavaScript frontend**.
-The platform provides real-time visualization and administrative control over urban systems such as **traffic, weather, energy, waste, and water management**.
+A real-time, data-driven decision dashboard for Chennai city operations. Built as a single-page application with live weather, AQI, traffic, city services, and tourism data.
 
-Designed as a **production-style MERN architecture project** showcasing authentication, role-based access, REST APIs, and interactive data visualization.
+![Dashboard Preview](docs/preview.png)
 
----
+## ✨ Features
 
-## ✨ Overview
+| Module | Description |
+|---|---|
+| **Overview** | City vitals, AI decision engine, zone status, live headlines |
+| **Weather** | Live conditions, 7-day forecast, interactive weather map |
+| **Traffic** | Corridor flow, CMRL metro lines, congestion heatmap |
+| **Environment** | AQI, PM2.5/PM10, pollutant breakdown, monitoring stations |
+| **City Services** | Hospitals, police, fire stations, pharmacies, ATMs, fuel |
+| **Tourism** | Heritage sites, temples, beaches, museums, restaurants, hotels |
+| **Live Alerts** | News feed, system alerts, AI-generated advisories |
 
-SmartCity Dashboard simulates a centralized control system used by modern municipalities to monitor infrastructure and respond to city-wide events.
+## 🚀 Quick Start
 
-Users can:
+```bash
+# Clone the repo
+git clone https://github.com/your-username/chennai-smart-city-dashboard.git
+cd chennai-smart-city-dashboard
 
-* Monitor live city metrics through interactive dashboards
-* Visualize infrastructure data using charts and SVG maps
-* Manage alerts and operational status
-* Perform administrative control via role-based permissions
+# Open in browser (no build step required!)
+open index.html
+```
 
----
+> **No build tools needed.** This is a pure HTML/CSS/JS project — just open `index.html` in any modern browser.
 
-## 🚀 Tech Stack
+## 🔑 API Keys (Optional)
 
-**Frontend**
+The dashboard works out of the box using free APIs. Optional keys unlock richer data:
 
-* HTML5, CSS3, Vanilla JavaScript
-* Chart.js
-* Responsive layout + dark/light mode
-* SVG-based interactive maps
+| Key | Provider | Purpose | Free Tier |
+|---|---|---|---|
+| `OWM_KEY` | [OpenWeatherMap](https://openweathermap.org/api) | Weather map tile overlays | 1,000 calls/day |
+| `TOMTOM_KEY` | [TomTom](https://developer.tomtom.com) | Live traffic tiles | 2,500 req/day |
+| `AQI_KEY` | [WAQI / AQI.cn](https://aqicn.org/data-platform/token/) | Accurate AQI readings | Free |
 
-**Backend**
-
-* Node.js
-* Express.js REST API
-* JWT Authentication
-* Role-based authorization
-
-**Database**
-
-* MongoDB (Atlas or Local)
-* Mongoose ODM
-
----
-
-## 📸 Features
-
-### 📊 Smart City Modules
-
-| Module     | Capabilities                                                 |
-| ---------- | ------------------------------------------------------------ |
-| 🚦 Traffic | Congestion visualization, incident tracking, control actions |
-| 🌦 Weather | Temperature zones, AQI indicators, forecasts                 |
-| ⚡ Energy   | Load monitoring, renewable distribution charts               |
-| ♻️ Waste   | Collection tracking, recycling metrics                       |
-| 💧 Water   | Pressure zones, consumption analytics, leak alerts           |
-
----
-
-### 🔐 Authentication & Roles
-
-* JWT-based secure login
-* Admin & User role separation
-* Protected API routes
-* Admin-only controls automatically hidden for users
-
----
-
-### 🎨 UI & Experience
-
-* Dark / Light mode (persistent)
-* Glassmorphism dashboard design
-* Responsive layout (desktop & tablet)
-* Animated SVG maps with tooltips
-* Toast notifications & dynamic updates
-
----
+Click the ⚙️ gear icon in the dashboard to enter your keys. They are stored locally in your browser — never sent anywhere else.
 
 ## 📁 Project Structure
 
 ```
-smartcity/
-├── frontend/      # UI pages, styles, and dashboard modules
-├── backend/       # Express API, models, routes, middleware
-└── README.md
+chennai-smart-city-dashboard/
+├── index.html              # Main entry point
+├── src/
+│   ├── css/
+│   │   └── styles.css      # All styles (variables, layout, components)
+│   └── js/
+│       ├── config.js        # API keys, constants, global state
+│       ├── data-services.js # City services POI data (hospitals, police, etc.)
+│       ├── data-tourism.js  # Tourism & attractions POI data
+│       ├── map-weather.js   # Leaflet weather map module
+│       ├── map-traffic.js   # Leaflet traffic map + CMRL metro lines
+│       ├── api-weather.js   # Open-Meteo weather fetching
+│       ├── api-aqi.js       # WAQI / OpenAQ air quality fetching
+│       ├── api-traffic.js   # Traffic corridor data & UI
+│       ├── api-news.js      # RSS news feed aggregation
+│       ├── dashboard.js     # Overview, AI engine, alerts, charts
+│       └── main.js          # App entry point & refresh cycle
+├── docs/
+│   └── API_SETUP.md        # Detailed API key setup guide
+└── .github/
+    └── workflows/
+        └── deploy.yml       # GitHub Pages auto-deploy
 ```
 
----
+## 🗺 Data Sources
 
-## ⚙️ Setup & Installation
+| Source | Data | Key Required |
+|---|---|---|
+| [Open-Meteo](https://open-meteo.com) | Weather, forecast | ❌ Free |
+| [OpenAQ v3](https://openaq.org) | Air quality | ❌ Free |
+| [WAQI](https://waqi.info) | Enhanced AQI | ✅ Optional |
+| [OpenWeatherMap](https://openweathermap.org) | Weather map tiles | ✅ Optional |
+| [TomTom](https://developer.tomtom.com) | Live traffic tiles | ✅ Optional |
+| [RSS Feeds](https://rss2json.com) | Chennai news | ❌ Free |
+| [Stadia Maps](https://stadiamaps.com) | Dark map tiles | ❌ Free |
 
-### Prerequisites
+## 🌐 Deploy to GitHub Pages
 
-* Node.js (v18+)
-* MongoDB Atlas account or local MongoDB
+1. Push this repo to GitHub
+2. Go to **Settings → Pages**
+3. Set source to **main branch / root**
+4. Your dashboard will be live at `https://your-username.github.io/chennai-smart-city-dashboard`
 
----
+Or use the included GitHub Actions workflow — it deploys automatically on every push to `main`.
 
-### 1️⃣ Install dependencies
+## 🛠 Tech Stack
 
-```bash
-cd backend
-npm install
-```
+- **Vanilla JS** — no frameworks, no bundler
+- **Leaflet.js** — interactive maps
+- **CSS Custom Properties** — theming & design tokens
+- **Canvas API** — 24h activity chart
+- **Open APIs** — weather, AQI, news
 
----
+## 📄 License
 
-### 2️⃣ Configure environment variables
-
-Create or edit `backend/.env`:
-
-```
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-PORT=5000
-```
-
----
-
-### 3️⃣ Seed database
-
-```bash
-npm run seed
-```
-
----
-
-### 4️⃣ Start server
-
-```bash
-npm start
-```
-
-Server runs at:
-
-```
-http://localhost:5000
-```
-
----
-
-## 🔐 Demo Credentials
-
-| Role  | Email                                             | Password |
-| ----- | ------------------------------------------------- | -------- |
-| Admin | [admin@smartcity.com](mailto:admin@smartcity.com) | admin123 |
-| User  | [user@smartcity.com](mailto:user@smartcity.com)   | user123  |
-
----
-
-## 🔌 API Overview
-
-Key REST endpoints:
-
-```
-POST   /api/auth/login
-GET    /api/auth/me
-GET    /api/traffic
-GET    /api/weather
-GET    /api/energy
-GET    /api/waste
-GET    /api/water
-GET    /api/alerts
-```
-
-Admin endpoints enable full CRUD operations for users and city metrics.
-
----
-
-## 🧠 Architecture
-
-```
-Frontend (Dashboard UI)
-        ↓
-Express REST API
-        ↓
-MongoDB Database
-```
-
-This separation mirrors real-world SaaS and municipal monitoring platforms.
-
----
-
-## 🎯 Learning Goals
-
-This project demonstrates:
-
-* Full-stack application architecture
-* REST API design
-* Authentication & authorization
-* Database modeling with MongoDB
-* Interactive dashboard UI development
-
----
-
-## 📌 Future Improvements
-
-* WebSocket real-time updates
-* Deployment with Docker
-* Role permission customization
-* Mobile optimization
-
----
-
-## 👨‍💻 Author
-
-Assishmon C S
-
-Aagney Vinodkumar
-
-Adithyadev V R
-
----
+MIT License — free to use, modify, and distribute.
