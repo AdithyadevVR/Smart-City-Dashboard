@@ -20,7 +20,6 @@ async function refreshAll(){
 }
 
 window.addEventListener('DOMContentLoaded',()=>{
-  updateSetupStatus();
   refreshAll();
   setInterval(refreshAll,5*60*1000);
   window.addEventListener('resize',drawActivityChart);
