@@ -15,7 +15,7 @@ const RSS_FEEDS=[
 async function fetchNews(){
   const all=[];
   for(const f of RSS_FEEDS){
-    try{const r=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(f.url)}`,{signal:AbortSignal.timeout(8000)});const text=await r.text();const xml=new DOMParser().parseFromString(text,'text/xml');xml.querySelectorAll('item').forEach((item,i)=>{if(i>5)return;const title=item.querySelector('title')?.textContent?.trim()||'';const link=item.querySelector('link')?.textContent?.trim()||'#';const pub=item.querySelector('pubDate')?.textContent?.trim()||'';if(title)all.push({title,link,pub,source:f.name});});}catch(e){}
+    try{const r=await fetch(`https://corsproxy.io/?${encodeURIComponent(f.url)}`,{signal:AbortSignal.timeout(8000)});const text=await r.text();const xml=new DOMParser().parseFromString(text,'text/xml');xml.querySelectorAll('item').forEach((item,i)=>{if(i>5)return;const title=item.querySelector('title')?.textContent?.trim()||'';const link=item.querySelector('link')?.textContent?.trim()||'#';const pub=item.querySelector('pubDate')?.textContent?.trim()||'';if(title)all.push({title,link,pub,source:f.name});});}catch(e){}
   }
   STATE.news=all;setText('ds-rss',all.length+' articles');document.getElementById('ds-rss').className='pill p-green';
   updateNewsUI(all);updateTicker(all);generateAIDecisions();
