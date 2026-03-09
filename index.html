@@ -21,36 +21,6 @@
 
 <div class="bg-mesh"></div>
 
-<!-- Setup Overlay -->
-<div class="setup-overlay" id="setupOverlay" style="display:none">
-  <div class="setup-panel">
-    <div class="setup-header">
-      <div><div class="setup-title">⚙️ API Key Configuration</div>
-        <div class="setup-sub">Optional keys unlock richer data. All keys stored locally.</div></div>
-      <button class="setup-close" onclick="closeSetup()">✕</button>
-    </div>
-    <div class="key-item">
-      <div class="key-label">🌦 OpenWeatherMap <span class="key-status" id="owm-status">Checking…</span></div>
-      <div class="key-desc">Weather tile overlays on map. Free tier available.<br><a href="https://openweathermap.org/api" target="_blank" class="key-link">openweathermap.org/api</a></div>
-      <div class="key-input-wrap"><input class="key-input" id="owm-input" type="text" placeholder="Paste OWM API key…"><button class="key-save-btn" onclick="saveKey('OWM_KEY','owm-input','owm-status')">Save</button></div>
-    </div>
-    <div class="key-item">
-      <div class="key-label">🚦 TomTom Traffic <span class="key-status" id="tomtom-status">Checking…</span></div>
-      <div class="key-desc">Live traffic tiles. Free 2,500 req/day.<br><a href="https://developer.tomtom.com" target="_blank" class="key-link">developer.tomtom.com</a></div>
-      <div class="key-input-wrap"><input class="key-input" id="tomtom-input" type="text" placeholder="Paste TomTom key…"><button class="key-save-btn" onclick="saveKey('TOMTOM_KEY','tomtom-input','tomtom-status')">Save</button></div>
-    </div>
-    <div class="key-item">
-      <div class="key-label">🌿 WAQI / AQI.cn <span class="key-status" id="waqi-status">Checking…</span></div>
-      <div class="key-desc">Accurate AQI data.<br><a href="https://aqicn.org/data-platform/token/" target="_blank" class="key-link">aqicn.org/data-platform/token</a></div>
-      <div class="key-input-wrap"><input class="key-input" id="waqi-input" type="text" placeholder="Paste WAQI token…"><button class="key-save-btn" onclick="saveKey('AQI_KEY','waqi-input','waqi-status')">Save</button></div>
-    </div>
-    <div class="setup-actions">
-      <button class="btn-primary" onclick="applyAndReload()">Apply & Reload</button>
-      <button class="btn-secondary" onclick="closeSetup()">Skip</button>
-    </div>
-  </div>
-</div>
-
 <!-- Nav -->
 <nav>
   <div class="nav-brand">
@@ -69,7 +39,6 @@
   <div class="nav-right">
     <div class="nav-status"><span class="status-dot"></span><span id="liveLabel">LIVE</span></div>
     <div class="nav-time" id="navClock">--:--:--</div>
-    <button class="gear-btn" onclick="openSetup()">⚙️</button>
   </div>
 </nav>
 
@@ -120,18 +89,18 @@
       </div>
     </div>
     <div style="display:flex;flex-direction:column;gap:10px">
-      <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+      <div class="card" style="flex:1;display:flex;flex-direction:column;overflow:hidden;min-height:0">
         <div class="card-title" style="flex-shrink:0"><span class="card-icon">🤖</span>AI Decision Engine<span class="pill p-teal" style="margin-left:auto;font-size:10px" id="ai-status-pill">Analyzing…</span></div>
-        <div class="panel-scroll" id="aiDecisions" style="flex:1"><div class="decision-card"><div class="decision-title">⏳ Initializing…</div><div class="decision-body">Fetching live city data…</div></div></div>
+        <div class="panel-scroll" id="aiDecisions" style="flex:1;overflow-y:auto;min-height:0"><div class="decision-card"><div class="decision-title">⏳ Initializing…</div><div class="decision-body">Fetching live city data…</div></div></div>
       </div>
       <div class="card" style="flex-shrink:0">
         <div class="card-title"><span class="card-icon">📍</span>Zone Status</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="zoneStatusGrid"></div>
       </div>
     </div>
-    <div class="card" style="display:flex;flex-direction:column;overflow:hidden">
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:0">
       <div class="card-title" style="flex-shrink:0"><span class="card-icon">📰</span>Live Headlines<span class="pill p-blue" style="margin-left:auto;font-size:10px" id="ov-news-count">--</span></div>
-      <div class="panel-scroll" id="ovNewsFeed" style="flex:1"><div style="color:var(--t2);font-size:13px;padding:12px">Loading news…</div></div>
+      <div class="panel-scroll" id="ovNewsFeed" style="flex:1;overflow-y:auto;min-height:0"><div style="color:var(--t2);font-size:13px;padding:12px">Loading news…</div></div>
     </div>
   </div>
 </div>
@@ -179,6 +148,7 @@
     <div class="card" style="display:flex;flex-direction:column;padding:12px">
       <div class="card-title" style="flex-shrink:0"><span class="card-icon">🗺</span>Weather Map<span style="font-size:11px;color:var(--t3);margin-left:auto;font-family:'Geist Mono',monospace" id="owm-key-note"></span></div>
       <div class="map-wrap" style="flex:1;position:relative">
+
         <div class="map-overlay-btns" id="weatherLayerBtns">
           <button class="map-layer-btn active" onclick="setWeatherLayer('none',this)">Base</button>
           <button class="map-layer-btn" onclick="setWeatherLayer('precipitation_new',this)">Rain</button>
@@ -257,8 +227,7 @@
         </div>
       </div>
     </div>
-    <div class="card"><div class="card-title"><span class="card-icon">⚠️</span>Health Advisory</div><div id="healthAdvisory" class="panel-scroll"></div></div>
-  </div>
+    <div class="card" style="display:flex;flex-direction:column;overflow:hidden;min-height:0"><div class="card-title" style="flex-shrink:0"><span class="card-icon">⚠️</span>Health Advisory</div><div id="healthAdvisory" class="panel-scroll" style="flex:1;overflow-y:auto;min-height:0"></div></div>  </div>
 </div>
 
 <!-- ══ CITY SERVICES ══ -->

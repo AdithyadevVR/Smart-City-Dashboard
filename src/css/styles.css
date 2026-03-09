@@ -134,7 +134,7 @@ main{flex:1;position:relative;z-index:1;overflow:hidden;padding-bottom:32px}
 .rain-overlay{position:absolute;inset:0;pointer-events:none;z-index:500;overflow:hidden}
 .raindrop{position:absolute;width:1px;background:linear-gradient(to bottom,transparent,rgba(147,210,255,0.5));animation:rain-fall linear infinite}
 @keyframes rain-fall{0%{transform:translateY(-20px)}100%{transform:translateY(calc(100% + 20px))}}
-.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.env-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:0}
 .aqi-bar-wrap{margin-top:8px}
 .aqi-bar{height:8px;border-radius:4px;background:linear-gradient(to right,#22c55e,#f59e0b,#ef4444);position:relative}
 .aqi-needle{position:absolute;top:-4px;width:2px;height:16px;background:white;border-radius:1px;
