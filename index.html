@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Chennai Smart City Dashboard</title>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏙</text></svg>">
+
+  <!-- Theme init — must run before CSS to avoid flash -->
+  <script>(function(){var t=localStorage.getItem('scd-theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);})()</script>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -40,6 +43,7 @@
   <div class="nav-right">
     <div class="nav-status"><span class="status-dot"></span><span id="liveLabel">LIVE</span></div>
     <div class="nav-time" id="navClock">--:--:--</div>
+    <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Toggle light/dark theme">☀️</button>
   </div>
 </nav>
 
