@@ -18,6 +18,23 @@ const STATE={weather:null,forecast:null,aqi:null,news:[],windDir:0,windSpeed:0,r
 function updateClock(){document.getElementById('navClock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});}
 setInterval(updateClock,1000);updateClock();
 
+// ── Theme toggle ──────────────────────────────────────────────────────────────
+function toggleTheme(){
+  var isLight=document.documentElement.getAttribute('data-theme')==='light';
+  var next=isLight?'dark':'light';
+  document.documentElement.setAttribute('data-theme',next);
+  document.getElementById('themeToggle').textContent=next==='light'?'🌙':'☀️';
+  localStorage.setItem('scd-theme',next);
+}
+(function(){
+  var saved=localStorage.getItem('scd-theme');
+  if(saved==='light'||saved==='dark')document.documentElement.setAttribute('data-theme',saved);
+  window.addEventListener('DOMContentLoaded',function(){
+    var btn=document.getElementById('themeToggle');
+    if(btn)btn.textContent=document.documentElement.getAttribute('data-theme')==='light'?'🌙':'☀️';
+  });
+})();
+
 // ── Tab switching ─────────────────────────────────────────────────────────────
 function switchTab(name,btn){
   document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
